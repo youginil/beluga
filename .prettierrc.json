@@ -1,0 +1,11 @@
+{
+    "overrides": [
+        {
+            "files": ["*.(json|html|js|css|ts|tsx)"],
+            "options": {
+                "singleQuote": true,
+                "tabWidth": 4
+            }
+        }
+    ]
+}
