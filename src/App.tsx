@@ -1,12 +1,7 @@
-import { Component } from 'solid-js';
+import { ParentComponent } from 'solid-js';
 
-const App: Component = () => {
-    return (
-        <button class="btn w-full">
-            <i class="bi bi-2-circle"></i>
-            hello
-        </button>
-    );
+const App: ParentComponent = (props) => {
+    return props.children;
 };
 
 export default App;
