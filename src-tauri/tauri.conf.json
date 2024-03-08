@@ -7,7 +7,7 @@
         "distDir": "../dist"
     },
     "package": {
-        "productName": "begula",
+        "productName": "beluga",
         "version": "0.1.0"
     },
     "tauri": {

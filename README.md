@@ -1,4 +1,4 @@
-# Begula
+# Beluga
 
 ```
 node scripts/icon.js

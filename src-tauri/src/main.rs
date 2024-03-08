@@ -38,7 +38,7 @@ fn main() {
         None
     } else {
         let mut config = Config::default();
-        config.tauri.bundle.identifier = "begula".to_string();
+        config.tauri.bundle.identifier = "beluga".to_string();
         let log_dir = app_log_dir(&config).expect("No log dir");
         fs::create_dir_all(&log_dir).expect("Fail to create log directory");
         let file_appender = tracing_appender::rolling::daily(log_dir, "");
@@ -63,7 +63,7 @@ fn main() {
                         v
                     } else {
                         WindowBuilder::new(app, "main", Default::default())
-                            .title("Begula")
+                            .title("Beluga")
                             .build()
                             .unwrap()
                     };
