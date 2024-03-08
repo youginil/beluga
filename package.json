@@ -10,17 +10,17 @@
     "dependencies": {
         "@tauri-apps/api": "^1.5.3",
         "bootstrap-icons": "^1.11.3",
-        "solid-js": "^1.8.7"
+        "solid-js": "^1.8.15"
     },
     "devDependencies": {
-        "@tauri-apps/cli": "^1.5.9",
-        "autoprefixer": "^10.4.16",
-        "daisyui": "^4.6.0",
-        "postcss": "^8.4.33",
+        "@tauri-apps/cli": "^1.5.11",
+        "autoprefixer": "^10.4.18",
+        "daisyui": "^4.7.2",
+        "postcss": "^8.4.35",
         "sharp": "^0.33.2",
         "tailwindcss": "^3.4.1",
-        "typescript": "^5.2.2",
-        "vite": "^5.0.8",
-        "vite-plugin-solid": "^2.8.0"
+        "typescript": "^5.4.2",
+        "vite": "^5.1.5",
+        "vite-plugin-solid": "^2.10.1"
     }
 }
