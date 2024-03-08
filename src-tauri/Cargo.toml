@@ -1,8 +1,8 @@
 [package]
-name = "laputa"
+name = "beluga"
 version = "0.1.0"
 description = "A dictionary application"
-default-run = "laputa"
+default-run = "beluga"
 edition = "2021"
 rust-version = "1.60"
 
@@ -14,7 +14,14 @@ tauri-build = { version = "1.5.1", features = [] }
 [dependencies]
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.5.4", features = [] }
+tauri = { version = "1.5.4", features = ["system-tray"] }
+tokio = { version = "1.36.0", features = ["full"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.18"
+tracing-appender = "0.2.3"
+flate2 = "1.0.25"
+anyhow = "1.0.80"
+beluga-core = { path = "../../beluga-core" }
 
 [features]
 custom-protocol = [ "tauri/custom-protocol" ]
