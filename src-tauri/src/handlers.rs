@@ -1,4 +1,4 @@
-use crate::{error::Result, settings::Settings};
+use crate::{error::Result, settings::Configuration};
 use serde::Deserialize;
 use tauri::{command, State};
 use tracing::instrument;
@@ -16,7 +16,7 @@ pub struct SearchParams {
 #[instrument(skip(state))]
 #[command]
 pub async fn search(state: State<'_, AppState>, req: SearchParams) -> Result<Vec<String>> {
-    let dict = if let Some(v) = state.get_dictionary(req.id) {
+    let dict = if let Some(v) = state.get_dictionary(req.id).await {
         v
     } else {
         return Ok(vec![]);
@@ -32,7 +32,7 @@ pub async fn search(state: State<'_, AppState>, req: SearchParams) -> Result<Vec
 #[instrument(skip(state))]
 #[command]
 pub async fn search_word(state: State<'_, AppState>, req: (u32, String)) -> Result<Option<String>> {
-    let dict = if let Some(v) = state.get_dictionary(req.0) {
+    let dict = if let Some(v) = state.get_dictionary(req.0).await {
         v
     } else {
         return Ok(None);
@@ -49,7 +49,7 @@ pub async fn search_resource(
     state: State<'_, AppState>,
     req: (u32, String),
 ) -> Result<Option<Vec<u8>>> {
-    let dict = if let Some(v) = state.get_dictionary(req.0) {
+    let dict = if let Some(v) = state.get_dictionary(req.0).await {
         v
     } else {
         return Ok(None);
@@ -66,7 +66,7 @@ pub async fn get_static_files(
     state: State<'_, AppState>,
     req: u32,
 ) -> Result<Option<(String, String)>> {
-    let dict = if let Some(v) = state.get_dictionary(req) {
+    let dict = if let Some(v) = state.get_dictionary(req).await {
         v
     } else {
         return Ok(None);
@@ -85,7 +85,14 @@ pub async fn resize_cache(state: State<'_, AppState>, req: u64) -> Result<()> {
 
 #[instrument(skip(state))]
 #[command]
-pub async fn get_settings(state: State<'_, AppState>) -> Result<Settings> {
-    let settings_lock = state.settings.lock().await;
-    Ok(settings_lock.clone())
+pub async fn get_settings(state: State<'_, AppState>) -> Result<Configuration> {
+    let settings_lock = state.settings.read().await;
+    Ok(settings_lock.config.clone())
+}
+
+#[instrument(skip(state))]
+#[command]
+pub async fn reload_dicts(state: &mut State<'_, AppState>) -> Result<()> {
+    state.load_dictionaries().await?;
+    Ok(())
 }

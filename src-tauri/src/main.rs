@@ -21,7 +21,10 @@ mod error;
 mod handlers;
 mod settings;
 
-fn main() {
+#[tokio::main]
+async fn main() {
+    tauri::async_runtime::set(tokio::runtime::Handle::current());
+
     let level = if cfg!(debug_assertions) {
         tracing::Level::TRACE
     } else {
@@ -46,8 +49,6 @@ fn main() {
         subscriber.with_writer(non_blocking).init();
         Some(guard)
     };
-
-    // tauri::async_runtime::set(tokio::runtime::Handle::current());
 
     let tray_menu = SystemTrayMenu::new()
         .add_item(CustomMenuItem::new("main".to_string(), "Beluga"))
@@ -88,12 +89,18 @@ fn main() {
                         panic!("fail to init settings. {:?}", e);
                     }
                 };
-            let dict_dir = settings.dict_dir.clone();
-            let mut state = AppState::new(settings);
-            if let Err(e) = state.load_dictionaries(&dict_dir) {
-                panic!("fail to load dictionary. {:?}", e);
-            }
+            let state = AppState::new(settings);
             app.manage(state);
+
+            let ah = app.app_handle();
+            tokio::spawn(async move {
+                let state = ah.state::<AppState>();
+                if let Err(e) = state.load_dictionaries().await {
+                    panic!("fail to load dictionary. {:?}", e);
+                }
+                let settings_lock = state.settings.read().await;
+                settings_lock.notify_changed(ah.clone());
+            });
 
             Ok(())
         })

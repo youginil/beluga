@@ -1,7 +1,11 @@
 use anyhow::Result;
 use std::{fs, path::Path};
+use tauri::{AppHandle, Manager};
+use tracing::error;
 
 use serde::{Deserialize, Serialize};
+
+static SETTINGS_FILE: &str = "settings.json";
 
 fn default_dict_dir() -> String {
     "".to_string()
@@ -17,10 +21,6 @@ fn default_cache_size() -> u32 {
 
 fn default_key_main() -> String {
     "Option+Space".to_string()
-}
-
-fn default_key_clipboard() -> String {
-    "Option+C".to_string()
 }
 
 fn default_key_ocr() -> String {
@@ -45,12 +45,13 @@ fn default_ocr_height() -> u32 {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DictItem {
+    pub id: u32,
     pub name: String,
     pub available: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Settings {
+pub struct Configuration {
     #[serde(default = "default_dict_dir")]
     pub dict_dir: String,
     #[serde(default = "default_dicts")]
@@ -59,8 +60,6 @@ pub struct Settings {
     pub cache_size: u32,
     #[serde(default = "default_key_main")]
     pub key_main: String,
-    #[serde(default = "default_key_clipboard")]
-    pub key_clipboard: String,
     #[serde(default = "default_key_ocr")]
     pub key_ocr: String,
     #[serde(default = "default_win_width")]
@@ -73,24 +72,48 @@ pub struct Settings {
     pub ocr_height: u32,
 }
 
+pub struct Settings {
+    file: String,
+    pub config: Configuration,
+}
+
 impl Settings {
     pub fn init(config_dir: &str, data_dir: &str) -> Result<Self> {
         let config_path = Path::new(config_dir);
         if !config_path.exists() {
             fs::create_dir_all(config_dir)?;
         }
-        let config_file = config_path.join("settings.json");
+        let config_file = config_path.join(SETTINGS_FILE);
+        let config_path = config_file.to_str().unwrap().to_string();
         if config_file.is_file() {
             let s = fs::read_to_string(&config_file)?;
-            if let Ok(v) = serde_json::from_str::<Settings>(&s) {
-                return Ok(v);
+            if let Ok(v) = serde_json::from_str::<Configuration>(&s) {
+                return Ok(Settings {
+                    file: config_path,
+                    config: v,
+                });
             }
         };
         let dict_dir = Path::new(data_dir).join("dicts");
-        let mut settings = serde_json::from_str::<Settings>("{}").unwrap();
-        settings.dict_dir = dict_dir.to_str().unwrap().to_string();
-        let s = serde_json::to_string(&settings)?;
+        let mut cfg = serde_json::from_str::<Configuration>("{}").unwrap();
+        cfg.dict_dir = dict_dir.to_str().unwrap().to_string();
+        let s = serde_json::to_string(&cfg)?;
         fs::write(config_file, s)?;
-        Ok(settings)
+        Ok(Settings {
+            file: config_path,
+            config: cfg,
+        })
+    }
+
+    pub fn notify_changed(&self, ah: AppHandle) {
+        if let Err(e) = ah.emit_all("settings_changed", self.config.clone()) {
+            error!("fail to notify settings_changed. {}", e);
+        }
+    }
+
+    pub fn save(&self) -> Result<()> {
+        let s = serde_json::to_string(&self.config)?;
+        fs::write(&self.file, s)?;
+        Ok(())
     }
 }
