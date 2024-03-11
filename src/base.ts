@@ -44,3 +44,15 @@ export function numbers2Uint8Array(arr: number[]): Uint8Array {
     arr.forEach((n, i) => (r[i] = n));
     return r;
 }
+
+export function getIDGenerator() {
+    let id = 0;
+    return () => {
+        if (id === Number.MAX_SAFE_INTEGER) {
+            id = 0;
+        } else {
+            id++;
+        }
+        return id;
+    };
+}

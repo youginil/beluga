@@ -2,56 +2,102 @@ import {
     Component,
     For,
     batch,
-    createEffect,
     createMemo,
     createSignal,
     onMount,
 } from 'solid-js';
 import './Home.css';
 import { appConfig } from '../state';
-import { debounce, numbers2Uint8Array, sendMessage } from '../base';
+import {
+    debounce,
+    getIDGenerator,
+    numbers2Uint8Array,
+    sendMessage,
+} from '../base';
 import { A } from '@solidjs/router';
+import { createStore } from 'solid-js/store';
 
-const NoDictId = -1;
+interface Word {
+    id: number;
+    name: string;
+    dict: string;
+}
+
 const DictCache: { id: number; js: string; css: string }[] = [];
 
 const Home: Component = () => {
-    const dicts = createMemo(() => appConfig.dicts);
-    const [dictId, setDictId] = createSignal(NoDictId);
+    const runner = createMemo(() => Math.min(3, appConfig.dicts.length));
     const [keyword, setKeyword] = createSignal('');
-    const [wdIdx, setWdIdx] = createSignal(-1);
-    const [words, setWords] = createSignal<string[]>([]);
+    const [selectedWord, setSelectedWord] = createSignal<Word | null>(null);
+    const [words, setWords] = createStore<{ exact: Word[]; fuzzy: Word[] }>({
+        exact: [],
+        fuzzy: [],
+    });
+    const result = createMemo(() => [...words.exact, ...words.fuzzy]);
     const [showWords, setShowWords] = createSignal(false);
 
-    let dictIdEl: HTMLSelectElement;
-    createEffect(() => {
-        const ds = dicts();
-        if (ds.length > 0) {
-            const id = +dictIdEl.value;
-            if (!ds.some((item) => item.id === id)) {
-                setDictId(ds[0].id);
-            }
-        } else {
-            setDictId(NoDictId);
-        }
-    });
+    const nextSearchId = getIDGenerator();
+    let searchId = nextSearchId();
 
     async function _search() {
         const kw = keyword().trim();
-        if (kw && dictId() !== NoDictId) {
+        batch(() => {
+            setWords({ exact: [], fuzzy: [] });
+            setSelectedWord(null);
+        });
+        pageEl.innerHTML = '';
+        if (!kw) {
+            return;
+        }
+
+        searchId = nextSearchId();
+        const theSearchId = searchId;
+        let dictIndex = 0;
+
+        async function searchFromDict(i: number, kw: string) {
+            const dict = appConfig.dicts[i];
             const list = await sendMessage('search', {
-                id: dictId(),
+                id: dict.id,
                 kw,
                 fuzzy_limit: 5,
-                result_limit: 20,
+                result_limit: 10,
             });
-            batch(() => {
-                setWords(list);
-                setWdIdx(0);
-                searchWord();
+            if (theSearchId !== searchId) {
+                return;
+            }
+            if (list.length > 0) {
+                if (result().length === 0) {
+                    setShowWords(true);
+                }
+                batch(() => {
+                    for (let j = 0; j < list.length; j++) {
+                        const wd = list[j];
+                        const item: Word = {
+                            id: dict.id,
+                            name: wd,
+                            dict: dict.name,
+                        };
+                        if (wd.toLowerCase() === kw.toLowerCase()) {
+                            setWords('exact', words.exact.length, item);
+                        } else {
+                            setWords('fuzzy', words.fuzzy.length, item);
+                        }
+                    }
+                });
+                if (selectedWord() === null && words.exact.length > 0) {
+                    selectResult(words.exact[0]);
+                }
+            }
+            if (dictIndex < appConfig.dicts.length - 1) {
+                await searchFromDict(++dictIndex, kw);
+            }
+        }
+
+        for (let i = 0; i < runner(); i++) {
+            dictIndex = i;
+            searchFromDict(i, kw).catch((e) => {
+                console.error('fail to search', e);
             });
-        } else {
-            setWords([]);
         }
     }
 
@@ -60,94 +106,93 @@ const Home: Component = () => {
     let pageEl: HTMLIFrameElement;
     let iframeId = '';
 
-    createEffect(() => {
-        if (words().length === 0) {
-            pageEl.innerHTML = '';
+    async function searchWord(wd: Word) {
+        const { id, name } = wd;
+        pageEl.innerHTML = '';
+        iframeId = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
+        const theIframeId = iframeId;
+        const theSearchId = searchId;
+        function isWordChanged() {
+            return theSearchId !== searchId || theIframeId !== iframeId;
         }
-    });
 
-    async function searchWord() {
-        const name = words()[wdIdx()];
-        const did = dictId();
-        if (did !== NoDictId && name) {
-            pageEl.innerHTML = '';
-            iframeId = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
-            const thisIframeId = iframeId;
-            function isWordChanged() {
-                return thisIframeId !== iframeId;
+        const content = await sendMessage('search_word', [id, name]);
+        if (isWordChanged()) {
+            return;
+        }
+        const div = document.createElement('div');
+        div.innerHTML = content ?? '';
+        div.querySelectorAll('link').forEach((el) => {
+            if (/\.css$/i.test(el.href)) {
+                el.remove();
+                console.warn(
+                    'CSS link should not be included in definition.',
+                    name
+                );
             }
-
-            const content = await sendMessage('search_word', [did, name]);
-            if (isWordChanged()) {
-                return;
+        });
+        div.querySelectorAll('script').forEach((el) => {
+            if (/\.js$/i.test(el.src)) {
+                el.remove();
+                console.warn(
+                    'JS link should not be included in definition.',
+                    name
+                );
             }
-            const div = document.createElement('div');
-            div.innerHTML = content ?? '';
-            div.querySelectorAll('link').forEach((el) => {
-                if (/\.css$/i.test(el.href)) {
-                    el.remove();
-                    console.warn(
-                        'CSS link should not be included in definition.',
-                        name
-                    );
-                }
-            });
-            div.querySelectorAll('script').forEach((el) => {
-                if (/\.js$/i.test(el.src)) {
-                    el.remove();
-                    console.warn(
-                        'JS link should not be included in definition.',
-                        name
-                    );
-                }
-            });
+        });
 
-            const iframe = document.createElement('iframe');
-            iframe.id = thisIframeId;
-            iframe.src = '/definition/index.html';
-            pageEl.appendChild(iframe);
-            const task1 = DictCache.some((item) => item.id === did)
-                ? Promise.resolve()
-                : sendMessage('get_static_files', did).then((r) => {
-                      if (!DictCache.some((item) => item.id === did)) {
-                          DictCache.push({
-                              id: did,
-                              css: r ? r[0] : '',
-                              js: r ? r[1] : '',
-                          });
-                      }
-                  });
-            const task2 = new Promise((resolve, reject) => {
-                iframe.onload = () => {
-                    resolve(undefined);
-                };
-                iframe.onerror = (e) => {
-                    reject(e);
-                };
-            });
-            Promise.all([task1, task2])
-                .then(() => {
-                    if (isWordChanged()) {
-                        return;
-                    }
-                    const cache = DictCache.filter(
-                        (item) => item.id === did
-                    )[0];
-                    const iframeDoc = iframe.contentDocument!;
-                    const style = document.createElement('style');
-                    style.textContent = cache.css;
-                    iframeDoc.head.appendChild(style);
-                    iframeDoc.body.appendChild(div);
-                    const script = document.createElement('script');
-                    script.textContent = cache.js;
-                    iframeDoc.head.appendChild(script);
-                    // @ts-ignore
-                    iframe.contentWindow.initPage();
-                })
-                .catch((e) => {
-                    console.error('fail to load definition', e);
+        const iframe = document.createElement('iframe');
+        iframe.id = theIframeId;
+        iframe.src = '/definition/index.html';
+        pageEl.appendChild(iframe);
+        const task1 = DictCache.some((item) => item.id === id)
+            ? Promise.resolve()
+            : sendMessage('get_static_files', id).then((r) => {
+                  if (!DictCache.some((item) => item.id === id)) {
+                      DictCache.push({
+                          id: id,
+                          css: r ? r[0] : '',
+                          js: r ? r[1] : '',
+                      });
+                  }
+              });
+        const task2 = new Promise((resolve, reject) => {
+            iframe.onload = () => {
+                iframe.contentDocument?.addEventListener('click', () => {
+                    setShowWords(false);
                 });
-        }
+                resolve(undefined);
+            };
+            iframe.onerror = (e) => {
+                reject(e);
+            };
+        });
+        Promise.all([task1, task2])
+            .then(() => {
+                if (isWordChanged()) {
+                    return;
+                }
+                const cache = DictCache.filter((item) => item.id === id)[0];
+                const iframeDoc = iframe.contentDocument!;
+                const style = document.createElement('style');
+                style.textContent = cache.css;
+                iframeDoc.head.appendChild(style);
+                iframeDoc.body.appendChild(div);
+                const script = document.createElement('script');
+                script.textContent = cache.js;
+                iframeDoc.head.appendChild(script);
+                // @ts-ignore
+                iframe.contentWindow.initPage();
+            })
+            .catch((e) => {
+                console.error('fail to load definition', e);
+            });
+    }
+
+    function selectResult(wd: Word) {
+        setSelectedWord(wd);
+        searchWord(wd);
+        setShowWords(false);
     }
 
     onMount(() => {
@@ -161,7 +206,11 @@ const Home: Component = () => {
                     break;
                 case 'resource':
                     const iframeId = pageEl.firstElementChild?.id;
-                    sendMessage('search_resource', [dictId(), name]).then(
+                    const wd = selectedWord();
+                    if (wd === null) {
+                        return;
+                    }
+                    sendMessage('search_resource', [wd.id, name]).then(
                         (data) => {
                             const iframe =
                                 pageEl.firstElementChild as HTMLIFrameElement | null;
@@ -201,58 +250,37 @@ const Home: Component = () => {
                     }}
                 />
             </header>
-            <div class="flex-shrink-0 p-2 bg-light-subtle d-flex">
-                <button
-                    type="button"
-                    class="btn btn-sm flex-shrink-0 me-2 show-words"
-                    classList={{
-                        'btn-primary': showWords(),
-                        'btn-outline-primary': !showWords(),
-                    }}
-                    onClick={() => setShowWords(!showWords())}
-                >
-                    <i class="bi bi-list-ul"></i>
-                </button>
-                <select
-                    class="form-select form-select-sm bg-light-subtle"
-                    value={dictId()}
-                    onChange={(e) => {
-                        setDictId(+e.target.value);
-                        search();
-                    }}
-                    ref={dictIdEl!}
-                >
-                    <option value={NoDictId}>choose a dictionary</option>
-                    <For each={dicts()}>
-                        {(item) => (
-                            <option value={item.id} disabled={!item.available}>
-                                {item.name}
-                            </option>
-                        )}
-                    </For>
-                </select>
-            </div>
-            <main class="flex-grow-1 search-result">
+            <div class="flex-grow-1 search-result">
                 <ul class="search-words" classList={{ show: showWords() }}>
-                    <For each={words()}>
-                        {(item, index) => (
+                    <For each={result()}>
+                        {(item) => (
                             <li
-                                classList={{ selected: index() === wdIdx() }}
-                                onClick={() => {
-                                    batch(() => {
-                                        setWdIdx(index());
-                                        setShowWords(false);
-                                    });
-                                    searchWord();
+                                classList={{
+                                    selected:
+                                        item.id === selectedWord()?.id &&
+                                        item.name === selectedWord()?.name,
                                 }}
+                                onClick={() => selectResult(item)}
                             >
-                                {item}
+                                {item.name}
+                                <p>{item.dict}</p>
                             </li>
                         )}
                     </For>
                 </ul>
-                <section class="search-details" ref={pageEl!}></section>
-            </main>
+                <div class="search-details">
+                    <div class="details-header">
+                        <button class="btn" onClick={() => setShowWords(true)}>
+                            <i class="bi bi-list"></i>
+                        </button>
+                    </div>
+                    <section
+                        class="details-wrapper"
+                        ref={pageEl!}
+                        onClick={() => setShowWords(false)}
+                    ></section>
+                </div>
+            </div>
         </div>
     );
 };
