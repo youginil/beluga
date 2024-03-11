@@ -1,6 +1,9 @@
-use crate::{error::Result, settings::Configuration};
+use crate::{
+    error::Result,
+    settings::{Configuration, DictItem},
+};
 use serde::Deserialize;
-use tauri::{command, State};
+use tauri::{command, AppHandle, State};
 use tracing::instrument;
 
 use crate::base::AppState;
@@ -90,9 +93,47 @@ pub async fn get_settings(state: State<'_, AppState>) -> Result<Configuration> {
     Ok(settings_lock.config.clone())
 }
 
+#[derive(Debug, Deserialize)]
+pub struct SettingsParams {
+    pub dict_dir: Option<String>,
+    pub dicts: Option<Vec<DictItem>>,
+    pub cache_size: Option<u32>,
+}
+
+#[instrument(skip(ah, state))]
+#[command]
+pub async fn set_settings(
+    ah: AppHandle,
+    state: State<'_, AppState>,
+    req: SettingsParams,
+) -> Result<()> {
+    let mut settings = state.settings.write().await;
+    let mut need_reload = false;
+    if let Some(v) = req.dict_dir {
+        settings.config.dict_dir = v;
+        need_reload = true;
+    }
+    if let Some(v) = req.dicts {
+        settings.config.dicts = v;
+    }
+    if let Some(v) = req.cache_size {
+        settings.config.cache_size = v;
+    }
+    settings.save()?;
+    drop(settings);
+
+    if need_reload {
+        state.load_dictionaries().await?;
+    }
+
+    let settings = state.settings.read().await;
+    settings.notify_changed(ah);
+    Ok(())
+}
+
 #[instrument(skip(state))]
 #[command]
-pub async fn reload_dicts(state: &mut State<'_, AppState>) -> Result<()> {
+pub async fn reload_dicts(state: State<'_, AppState>) -> Result<()> {
     state.load_dictionaries().await?;
     Ok(())
 }

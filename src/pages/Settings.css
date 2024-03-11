@@ -1,0 +1,14 @@
+.settings-wrapper {
+    padding: 10px;
+}
+@media (min-width: 768px) {
+    .settings-wrapper {
+        width: 768px;
+        margin: 0 auto;
+    }
+}
+@media (max-width: 768px) {
+    .settings-wrapper {
+        width: 100%;
+    }
+}

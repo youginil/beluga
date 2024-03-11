@@ -1,6 +1,11 @@
+interface DictItem {
+    id: number;
+    name: string;
+    available: boolean;
+}
 interface Configuration {
     dict_dir: string;
-    dicts: { id: number; name: string; available: boolean }[];
+    dicts: DictItem[];
     cache_size: number;
     key_main: string;
     key_ocr: string;
@@ -22,6 +27,8 @@ type IpcMessage = {
     get_static_files: RR<number, [string, string] | null>;
     resize_cache: RR<number, void>;
     get_settings: RR<void, Configuration>;
+    set_settings: RR<Partial<Configuration>, void>;
+    reload_dicts: RR<void, void>;
 };
 
 interface ChildMessage {

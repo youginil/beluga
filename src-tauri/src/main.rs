@@ -9,7 +9,8 @@ use tauri::{
 };
 
 use handlers::{
-    get_settings, get_static_files, resize_cache, search, search_resource, search_word,
+    get_settings, get_static_files, reload_dicts, resize_cache, search, search_resource,
+    search_word, set_settings,
 };
 use tracing::debug;
 use tracing_subscriber::fmt::format::FmtSpan;
@@ -111,6 +112,8 @@ async fn main() {
             get_static_files,
             resize_cache,
             get_settings,
+            set_settings,
+            reload_dicts,
         ])
         .build(tauri::generate_context!())
         .expect("error while running application")

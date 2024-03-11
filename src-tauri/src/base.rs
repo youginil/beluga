@@ -33,13 +33,16 @@ impl AppState {
         let settings_lock = self.settings.read().await;
         let dir = settings_lock.config.dict_dir.clone();
         drop(settings_lock);
+
         let dir_path = Path::new(&dir);
         if !dir_path.exists() || !dir_path.is_dir() {
             fs::create_dir_all(dir_path)?;
         }
+
         let mut dicts_lock = self.dicts.write().await;
         dicts_lock.clear();
         drop(dicts_lock);
+
         let mut rd = fs::read_dir(&dir)?;
         let ext = format!(".{}", EXT_WORD);
         let mut list: Vec<(u32, String)> = vec![];

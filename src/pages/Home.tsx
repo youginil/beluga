@@ -10,6 +10,7 @@ import {
 import './Home.css';
 import { appConfig } from '../state';
 import { debounce, numbers2Uint8Array, sendMessage } from '../base';
+import { A } from '@solidjs/router';
 
 const NoDictId = -1;
 const DictCache: { id: number; js: string; css: string }[] = [];
@@ -185,7 +186,10 @@ const Home: Component = () => {
 
     return (
         <div class="d-flex flex-column position-fixed top-0 bottom-0 start-0 end-0">
-            <header class="flex-shrink-0 p-2 bg-light-subtle">
+            <header class="flex-shrink-0 p-2 bg-light-subtle d-flex align-items-center">
+                <A href="/settings" class="btn btn-light btn-lg me-2">
+                    <i class="bi bi-gear-wide-connected"></i>
+                </A>
                 <input
                     type="text"
                     class="form-control form-control-lg text-center bg-light-subtle"
