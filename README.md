@@ -9,3 +9,4 @@ pnpm tauri build
 ## TODO
 
 - on macos audio can only play once
+- change extension name
