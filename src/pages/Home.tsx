@@ -189,16 +189,47 @@ const Home: Component = () => {
             });
     }
 
+    let wordsEl: HTMLUListElement;
+
     function selectResult(wd: Word) {
         setSelectedWord(wd);
         searchWord(wd);
         setShowWords(false);
+        setTimeout(() => {
+            wordsEl
+                .querySelector('.selected')
+                ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }, 0);
+    }
+
+    function selectNextResult() {
+        const list = result();
+        if (list.length === 0) {
+            return;
+        }
+        const wd = selectedWord();
+        const idx = wd ? list.indexOf(wd) : 0;
+        const nextIdx = idx === list.length - 1 ? 0 : idx + 1;
+        selectResult(list[nextIdx]);
+    }
+
+    function selectPrevResult() {
+        const list = result();
+        if (list.length === 0) {
+            return;
+        }
+        const wd = selectedWord();
+        const idx = wd ? list.indexOf(wd) : 0;
+        const prevIdx = idx === 0 ? list.length - 1 : idx - 1;
+        selectResult(list[prevIdx]);
     }
 
     onMount(() => {
         window.addEventListener('message', (e) => {
             const { type, name, dictfile } = e.data as ChildMessage;
-            console.log('todo', dictfile);
+            if (dictfile) {
+                console.log('todo', dictfile);
+            }
             switch (type) {
                 case 'entry':
                     setKeyword(name);
@@ -236,22 +267,36 @@ const Home: Component = () => {
     return (
         <div class="d-flex flex-column position-fixed top-0 bottom-0 start-0 end-0">
             <header class="flex-shrink-0 p-2 bg-light-subtle d-flex align-items-center">
-                <A href="/settings" class="btn btn-light btn-lg me-2">
+                <A href="/settings" class="btn btn-light me-2">
                     <i class="bi bi-gear-wide-connected"></i>
                 </A>
                 <input
                     type="text"
-                    class="form-control form-control-lg text-center bg-light-subtle"
+                    class="form-control form-control text-center bg-light-subtle"
                     placeholder="Search..."
                     value={keyword()}
                     onInput={(e) => {
                         setKeyword(e.target.value);
                         search();
                     }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Tab') {
+                            e.preventDefault();
+                            if (e.shiftKey) {
+                                selectPrevResult();
+                            } else {
+                                selectNextResult();
+                            }
+                        }
+                    }}
                 />
             </header>
             <div class="flex-grow-1 search-result">
-                <ul class="search-words" classList={{ show: showWords() }}>
+                <ul
+                    class="search-words"
+                    classList={{ show: showWords() }}
+                    ref={wordsEl!}
+                >
                     <For each={result()}>
                         {(item) => (
                             <li

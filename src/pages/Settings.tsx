@@ -33,7 +33,7 @@ const Settings: Component = () => {
     return (
         <div class="d-flex flex-column">
             <header class="flex-shrink-0 p-2 bg-light-subtle">
-                <A href="/" class="btn btn-light btn-lg" end={true}>
+                <A href="/" class="btn btn-light" end={true}>
                     <i class="bi bi-arrow-left"></i>
                 </A>
             </header>

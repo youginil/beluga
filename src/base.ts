@@ -11,11 +11,11 @@ export function sendMessage<K extends keyof IpcMessage>(
                 req,
             })
             .then((res) => {
-                console.log('IPC', channel, req, res);
+                // console.log('IPC', channel, req, res);
                 resolve(res);
             })
             .catch((e) => {
-                console.log('IPC', channel, req, e);
+                // console.log('IPC', channel, req, e);
                 poptip.error(`${e}`);
                 reject(e);
             });
