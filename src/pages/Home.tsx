@@ -287,6 +287,12 @@ const Home: Component = () => {
                             } else {
                                 selectNextResult();
                             }
+                        } else if (e.key === 'Backspace') {
+                            if (e.shiftKey) {
+                                e.preventDefault();
+                                setKeyword('');
+                                search();
+                            }
                         }
                     }}
                 />
