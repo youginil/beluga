@@ -208,9 +208,11 @@ const Home: Component = () => {
             return;
         }
         const wd = selectedWord();
-        const idx = wd ? list.indexOf(wd) : 0;
-        const nextIdx = idx === list.length - 1 ? 0 : idx + 1;
-        selectResult(list[nextIdx]);
+        let idx = wd ? list.indexOf(wd) + 1 : 0;
+        if (idx >= list.length - 1) {
+            idx = 0;
+        }
+        selectResult(list[idx]);
     }
 
     function selectPrevResult() {
@@ -219,9 +221,11 @@ const Home: Component = () => {
             return;
         }
         const wd = selectedWord();
-        const idx = wd ? list.indexOf(wd) : 0;
-        const prevIdx = idx === 0 ? list.length - 1 : idx - 1;
-        selectResult(list[prevIdx]);
+        let idx = wd ? list.indexOf(wd) - 1 : 0;
+        if (idx < 0) {
+            idx = list.length - 1;
+        }
+        selectResult(list[idx]);
     }
 
     onMount(() => {
