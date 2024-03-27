@@ -20,7 +20,7 @@ tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
 tracing-appender = "0.2.3"
 flate2 = "1.0.28"
-anyhow = "1.0.80"
+anyhow = "1.0.81"
 beluga-core = { path = "../../beluga-core" }
 
 [features]

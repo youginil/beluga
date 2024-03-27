@@ -4,7 +4,7 @@
 use std::{fs, io};
 
 use tauri::{
-    api::path::app_log_dir, generate_handler, Config, CustomMenuItem, Manager, SystemTray,
+    api::path::app_log_dir, generate_handler, Config, CustomMenuItem, Manager, Menu, SystemTray,
     SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem, WindowBuilder,
 };
 
