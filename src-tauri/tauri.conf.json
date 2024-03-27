@@ -15,9 +15,6 @@
             "all": false,
             "dialog": {
                 "all": true
-            },
-            "window": {
-                "all": true
             }
         },
         "bundle": {

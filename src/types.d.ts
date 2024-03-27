@@ -18,6 +18,7 @@ interface Configuration {
 type RR<R, T> = { req: R; res: T };
 
 type IpcMessage = {
+    open_devtools: RR<void, void>;
     search: RR<
         { id: number; kw: string; fuzzy_limit: number; result_limit: number },
         string[]

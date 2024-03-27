@@ -3,10 +3,19 @@ use crate::{
     settings::{Configuration, DictItem},
 };
 use serde::Deserialize;
-use tauri::{command, AppHandle, State};
+use tauri::{command, AppHandle, Manager, State};
 use tracing::instrument;
 
 use crate::base::AppState;
+
+#[instrument(skip(ah))]
+#[command]
+pub fn open_devtools(ah: AppHandle) -> Result<()> {
+    if let Some(v) = ah.get_window("main") {
+        v.open_devtools();
+    }
+    Ok(())
+}
 
 #[derive(Debug, Deserialize)]
 pub struct SearchParams {

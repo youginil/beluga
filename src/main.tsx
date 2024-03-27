@@ -27,6 +27,17 @@ event.listen<Configuration>('settings_changed', ({ payload }) => {
     setAppConfig(payload);
 });
 
+let openingDevtools = false;
+document.addEventListener('keydown', async (e) => {
+    if (!openingDevtools && e.shiftKey && e.altKey && e.code === 'KeyD') {
+        openingDevtools = true;
+        try {
+            await sendMessage('open_devtools', undefined);
+        } catch (e) {}
+        openingDevtools = false;
+    }
+});
+
 sendMessage('get_settings', undefined).then((v) => {
     setAppConfig(v);
 });

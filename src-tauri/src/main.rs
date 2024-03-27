@@ -4,13 +4,13 @@
 use std::{fs, io};
 
 use tauri::{
-    api::path::app_log_dir, generate_handler, Config, CustomMenuItem, Manager, Menu, SystemTray,
+    api::path::app_log_dir, generate_handler, Config, CustomMenuItem, Manager, SystemTray,
     SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem, WindowBuilder,
 };
 
 use handlers::{
-    get_settings, get_static_files, reload_dicts, resize_cache, search, search_resource,
-    search_word, set_settings,
+    get_settings, get_static_files, open_devtools, reload_dicts, resize_cache, search,
+    search_resource, search_word, set_settings,
 };
 use tracing::debug;
 use tracing_subscriber::fmt::format::FmtSpan;
@@ -106,6 +106,7 @@ async fn main() {
             Ok(())
         })
         .invoke_handler(generate_handler![
+            open_devtools,
             search,
             search_word,
             search_resource,
