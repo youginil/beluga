@@ -44,18 +44,19 @@ impl AppState {
         drop(dicts_lock);
 
         let mut rd = fs::read_dir(&dir)?;
-        let ext = format!(".{}", EXT_WORD);
+        let word_filename = format!("index.{}", EXT_WORD);
         let mut list: Vec<(u32, String)> = vec![];
         while let Some(Ok(item)) = rd.next() {
-            if let Some(name) = item.file_name().to_str() {
-                if name.ends_with(&ext) {
-                    let file_path = dir_path.join(name);
-                    match self.add_dictionary(file_path.to_str().unwrap()).await {
-                        Ok(v) => list.push(v),
-                        Err(e) => {
-                            warn!("fail to load dictionary: {}. {:?}", name, e);
-                        }
-                    }
+            let is_dir = item.file_type().is_ok_and(|x| x.is_dir());
+            if !is_dir {
+                continue;
+            }
+            let name = item.file_name().to_str().unwrap().to_string();
+            let word_filepath = dir_path.join(item.file_name()).join(&word_filename);
+            match self.add_dictionary(&word_filepath.to_str().unwrap()).await {
+                Ok(v) => list.push((v, name)),
+                Err(e) => {
+                    warn!("fail to load dictionary: {:?}. {:?}", &word_filepath, e);
                 }
             }
         }
@@ -87,7 +88,7 @@ impl AppState {
         Ok(())
     }
 
-    async fn add_dictionary(&self, file: &str) -> Result<(u32, String)> {
+    async fn add_dictionary(&self, file: &str) -> Result<u32> {
         let mut last_cache_id = self.last_cache_id.lock().await;
         let (dict, cache_id) = Dictionary::new(file, *last_cache_id)?;
         *last_cache_id = cache_id + 1;
@@ -97,10 +98,7 @@ impl AppState {
         dicts_lock.insert(dict_id, Arc::new(Mutex::new(dict)));
         *last_dict_id += 1;
         info!("dict ID: {}", dict_id);
-        let filepath = Path::new(file);
-        let filename = filepath.file_name().unwrap().to_str().unwrap().to_string();
-        let (basename, _) = filename.split_at(filename.len() - 1 - EXT_WORD.len());
-        Ok((dict_id, basename.to_string()))
+        Ok(dict_id)
     }
 
     pub async fn get_dictionary(&self, id: u32) -> Option<Arc<Mutex<Dictionary>>> {
