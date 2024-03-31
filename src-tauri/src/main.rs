@@ -1,17 +1,19 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs, io};
+use std::{collections::HashMap, fs, io, sync::Arc};
 
+use beluga_core::dictionary::NodeCache;
+use server::start_server;
 use tauri::{
     api::path::app_log_dir, generate_handler, Config, CustomMenuItem, Manager, SystemTray,
     SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem, WindowBuilder,
 };
 
 use handlers::{
-    get_settings, get_static_files, open_devtools, reload_dicts, resize_cache, search,
-    search_resource, search_word, set_settings,
+    get_server_port, get_settings, open_devtools, reload_dicts, resize_cache, search, set_settings,
 };
+use tokio::sync::RwLock;
 use tracing::debug;
 use tracing_subscriber::fmt::format::FmtSpan;
 
@@ -20,6 +22,7 @@ use crate::{base::AppState, settings::Settings};
 mod base;
 mod error;
 mod handlers;
+mod server;
 mod settings;
 
 #[tokio::main]
@@ -90,7 +93,20 @@ async fn main() {
                         panic!("fail to init settings. {:?}", e);
                     }
                 };
-            let state = AppState::new(settings);
+            let cache_size = settings.config.cache_size * 1024 * 1024;
+            let cache = Arc::new(RwLock::new(NodeCache::new(cache_size.into())));
+            let settings = Arc::new(RwLock::new(settings));
+            let dicts = Arc::new(RwLock::new(HashMap::new()));
+
+            let settings2 = settings.clone();
+            let dicts2 = dicts.clone();
+            let cache2 = cache.clone();
+            let ah2 = app.app_handle();
+            tokio::spawn(async move {
+                start_server(settings2, dicts2, cache2, ah2).await;
+            });
+
+            let state = AppState::new(settings, dicts, cache);
             app.manage(state);
 
             let ah = app.app_handle();
@@ -107,10 +123,8 @@ async fn main() {
         })
         .invoke_handler(generate_handler![
             open_devtools,
+            get_server_port,
             search,
-            search_word,
-            search_resource,
-            get_static_files,
             resize_cache,
             get_settings,
             set_settings,

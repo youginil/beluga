@@ -8,12 +8,7 @@ import {
 } from 'solid-js';
 import './Home.css';
 import { appConfig } from '../state';
-import {
-    debounce,
-    getIDGenerator,
-    numbers2Uint8Array,
-    sendMessage,
-} from '../base';
+import { debounce, getIDGenerator, sendMessage } from '../base';
 import { A } from '@solidjs/router';
 import { createStore } from 'solid-js/store';
 
@@ -23,10 +18,11 @@ interface Word {
     dict: string;
 }
 
-const DictCache: { id: number; js: string; css: string }[] = [];
-
 const Home: Component = () => {
-    const runner = createMemo(() => Math.min(3, appConfig.dicts.length));
+    const dicts = createMemo(() =>
+        appConfig.dicts.filter((item) => item.available)
+    );
+    const runner = createMemo(() => Math.min(3, dicts().length));
     const [keyword, setKeyword] = createSignal('');
     const [selectedWord, setSelectedWord] = createSignal<Word | null>(null);
     const [words, setWords] = createStore<{ exact: Word[]; fuzzy: Word[] }>({
@@ -39,13 +35,15 @@ const Home: Component = () => {
     const nextSearchId = getIDGenerator();
     let searchId = nextSearchId();
 
+    let serverPort = 0;
+
     async function _search() {
         const kw = keyword().trim();
         batch(() => {
             setWords({ exact: [], fuzzy: [] });
             setSelectedWord(null);
         });
-        pageEl.innerHTML = '';
+        iframe.src = '';
         if (!kw) {
             return;
         }
@@ -55,7 +53,7 @@ const Home: Component = () => {
         let dictIndex = 0;
 
         async function searchFromDict(i: number, kw: string) {
-            const dict = appConfig.dicts[i];
+            const dict = dicts()[i];
             const list = await sendMessage('search', {
                 id: dict.id,
                 kw,
@@ -88,7 +86,7 @@ const Home: Component = () => {
                     selectResult(words.exact[0]);
                 }
             }
-            if (dictIndex < appConfig.dicts.length - 1) {
+            if (dictIndex < dicts().length - 1) {
                 await searchFromDict(++dictIndex, kw);
             }
         }
@@ -103,97 +101,19 @@ const Home: Component = () => {
 
     const search = debounce(_search, 500);
 
-    let pageEl: HTMLIFrameElement;
-    let iframeId = '';
+    let iframe: HTMLIFrameElement;
 
-    async function searchWord(wd: Word) {
-        const { id, name } = wd;
-        pageEl.innerHTML = '';
-        iframeId = `${Date.now()}-${Math.round(Math.random() * 1000)}`;
-        const theIframeId = iframeId;
-        const theSearchId = searchId;
-        function isWordChanged() {
-            return theSearchId !== searchId || theIframeId !== iframeId;
-        }
-
-        const content = await sendMessage('search_word', [id, name]);
-        if (isWordChanged()) {
-            return;
-        }
-        const div = document.createElement('div');
-        div.innerHTML = content ?? '';
-        div.querySelectorAll('link').forEach((el) => {
-            if (/\.css$/i.test(el.href)) {
-                el.remove();
-                console.warn(
-                    'CSS link should not be included in definition.',
-                    name
-                );
-            }
-        });
-        div.querySelectorAll('script').forEach((el) => {
-            if (/\.js$/i.test(el.src)) {
-                el.remove();
-                console.warn(
-                    'JS link should not be included in definition.',
-                    name
-                );
-            }
-        });
-
-        const iframe = document.createElement('iframe');
-        iframe.id = theIframeId;
-        iframe.src = '/definition/index.html';
-        pageEl.appendChild(iframe);
-        const task1 = DictCache.some((item) => item.id === id)
-            ? Promise.resolve()
-            : sendMessage('get_static_files', id).then((r) => {
-                  if (!DictCache.some((item) => item.id === id)) {
-                      DictCache.push({
-                          id: id,
-                          css: r ? r[0] : '',
-                          js: r ? r[1] : '',
-                      });
-                  }
-              });
-        const task2 = new Promise((resolve, reject) => {
-            iframe.onload = () => {
-                iframe.contentDocument?.addEventListener('click', () => {
-                    setShowWords(false);
-                });
-                resolve(undefined);
-            };
-            iframe.onerror = (e) => {
-                reject(e);
-            };
-        });
-        Promise.all([task1, task2])
-            .then(() => {
-                if (isWordChanged()) {
-                    return;
-                }
-                const cache = DictCache.filter((item) => item.id === id)[0];
-                const iframeDoc = iframe.contentDocument!;
-                const style = document.createElement('style');
-                style.textContent = cache.css;
-                iframeDoc.head.appendChild(style);
-                iframeDoc.body.appendChild(div);
-                const script = document.createElement('script');
-                script.textContent = cache.js;
-                iframeDoc.head.appendChild(script);
-                // @ts-ignore
-                iframe.contentWindow.initPage();
-            })
-            .catch((e) => {
-                console.error('fail to load definition', e);
-            });
+    async function loadEntry(wd: Word) {
+        iframe.src = `http://localhost:${serverPort}/@entry?dict_id=${
+            wd.id
+        }&name=${encodeURIComponent(wd.name)}`;
     }
 
     let wordsEl: HTMLUListElement;
 
     function selectResult(wd: Word) {
         setSelectedWord(wd);
-        searchWord(wd);
+        loadEntry(wd);
         setShowWords(false);
         setTimeout(() => {
             wordsEl
@@ -229,42 +149,8 @@ const Home: Component = () => {
     }
 
     onMount(() => {
-        window.addEventListener('message', (e) => {
-            const { type, name, dictfile } = e.data as ChildMessage;
-            if (dictfile) {
-                console.log('todo', dictfile);
-            }
-            switch (type) {
-                case 'entry':
-                    setKeyword(name);
-                    search();
-                    break;
-                case 'resource':
-                    const iframeId = pageEl.firstElementChild?.id;
-                    const wd = selectedWord();
-                    if (wd === null) {
-                        return;
-                    }
-                    sendMessage('search_resource', [wd.id, name]).then(
-                        (data) => {
-                            const iframe =
-                                pageEl.firstElementChild as HTMLIFrameElement | null;
-                            if (iframe && iframe.id === iframeId) {
-                                const msg: ParentMessage = {
-                                    name,
-                                    data: data
-                                        ? numbers2Uint8Array(data)
-                                        : false,
-                                };
-                                iframe.contentWindow?.postMessage(msg);
-                            }
-                        }
-                    );
-                    break;
-                default:
-                    const nop: never = type;
-                    console.error('invalid message type', nop);
-            }
+        sendMessage('get_server_port', undefined).then((port) => {
+            serverPort = port;
         });
     });
 
@@ -331,9 +217,10 @@ const Home: Component = () => {
                     </div>
                     <section
                         class="details-wrapper"
-                        ref={pageEl!}
                         onClick={() => setShowWords(false)}
-                    ></section>
+                    >
+                        <iframe src="" ref={iframe!}></iframe>
+                    </section>
                 </div>
             </div>
         </div>

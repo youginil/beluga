@@ -29,6 +29,11 @@
     margin: 0;
     font-weight: normal;
     text-align: right;
+    color: #696969;
+    margin-top: 4px;
+}
+.search-words > *.selected > p {
+    color: #ffffff;
 }
 .search-details {
     display: flex;

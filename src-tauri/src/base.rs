@@ -1,5 +1,7 @@
 use anyhow::Result;
+use std::path::PathBuf;
 use std::{collections::HashMap, fs, path::Path, sync::Arc};
+use tauri::AppHandle;
 use tracing::{info, warn};
 
 use tokio::sync::{Mutex, RwLock};
@@ -18,14 +20,17 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(settings: Settings) -> Self {
-        let cache_size = settings.config.cache_size * 1024 * 1024;
+    pub fn new(
+        settings: Arc<RwLock<Settings>>,
+        dicts: Arc<RwLock<HashMap<u32, Arc<Mutex<Dictionary>>>>>,
+        cache: Arc<RwLock<NodeCache>>,
+    ) -> Self {
         Self {
             last_dict_id: Arc::new(Mutex::new(1)),
             last_cache_id: Arc::new(Mutex::new(1)),
-            dicts: Arc::new(RwLock::new(HashMap::new())),
-            cache: Arc::new(RwLock::new(NodeCache::new(cache_size.into()))),
-            settings: Arc::new(RwLock::new(settings)),
+            dicts,
+            cache,
+            settings,
         }
     }
 
@@ -109,4 +114,16 @@ impl AppState {
             None
         }
     }
+}
+
+pub fn get_resource_directory(ah: AppHandle) -> PathBuf {
+    #[cfg(debug_assertions)]
+    let dir = ah
+        .path_resolver()
+        .resource_dir()
+        .unwrap()
+        .join("../../resources");
+    #[cfg(not(debug_assertions))]
+    let dir = ah.path_resolver().resolve_resource("resources").unwrap();
+    dir
 }

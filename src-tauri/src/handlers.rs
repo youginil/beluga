@@ -17,6 +17,13 @@ pub fn open_devtools(ah: AppHandle) -> Result<()> {
     Ok(())
 }
 
+#[instrument(skip(state))]
+#[command]
+pub async fn get_server_port(state: State<'_, AppState>) -> Result<u32> {
+    let settings_lock = state.settings.read().await;
+    Ok(settings_lock.server_port)
+}
+
 #[derive(Debug, Deserialize)]
 pub struct SearchParams {
     pub id: u32,
@@ -39,52 +46,6 @@ pub async fn search(state: State<'_, AppState>, req: SearchParams) -> Result<Vec
         .search(cache, &req.kw, req.fuzzy_limit, req.result_limit)
         .await;
     Ok(r)
-}
-
-#[instrument(skip(state))]
-#[command]
-pub async fn search_word(state: State<'_, AppState>, req: (u32, String)) -> Result<Option<String>> {
-    let dict = if let Some(v) = state.get_dictionary(req.0).await {
-        v
-    } else {
-        return Ok(None);
-    };
-    let mut d = dict.lock().await;
-    let cache = state.cache.clone();
-    let r = d.search_word(cache, &req.1).await;
-    Ok(r)
-}
-
-#[instrument(skip(state))]
-#[command]
-pub async fn search_resource(
-    state: State<'_, AppState>,
-    req: (u32, String),
-) -> Result<Option<Vec<u8>>> {
-    let dict = if let Some(v) = state.get_dictionary(req.0).await {
-        v
-    } else {
-        return Ok(None);
-    };
-    let mut d = dict.lock().await;
-    let cache = state.cache.clone();
-    let r = d.search_resource(cache, &req.1).await;
-    Ok(r)
-}
-
-#[instrument(skip(state))]
-#[command]
-pub async fn get_static_files(
-    state: State<'_, AppState>,
-    req: u32,
-) -> Result<Option<(String, String)>> {
-    let dict = if let Some(v) = state.get_dictionary(req).await {
-        v
-    } else {
-        return Ok(None);
-    };
-    let d = dict.lock().await;
-    Ok(Some((d.css.clone(), d.js.clone())))
 }
 
 #[instrument(skip(state))]

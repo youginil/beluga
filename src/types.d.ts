@@ -19,13 +19,11 @@ type RR<R, T> = { req: R; res: T };
 
 type IpcMessage = {
     open_devtools: RR<void, void>;
+    get_server_port: RR<void, number>;
     search: RR<
         { id: number; kw: string; fuzzy_limit: number; result_limit: number },
         string[]
     >;
-    search_word: RR<[number, string], string | null>;
-    search_resource: RR<[number, string], number[] | null>;
-    get_static_files: RR<number, [string, string] | null>;
     resize_cache: RR<number, void>;
     get_settings: RR<void, Configuration>;
     set_settings: RR<Partial<Configuration>, void>;

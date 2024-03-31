@@ -6,6 +6,7 @@ use tracing::{error, instrument};
 use serde::{Deserialize, Serialize};
 
 static SETTINGS_FILE: &str = "settings.json";
+static DICTS_DIR: &str = "dicts";
 
 fn default_dict_dir() -> String {
     "".to_string()
@@ -75,6 +76,7 @@ pub struct Configuration {
 pub struct Settings {
     file: String,
     pub config: Configuration,
+    pub server_port: u32,
 }
 
 impl Settings {
@@ -92,10 +94,11 @@ impl Settings {
                 return Ok(Settings {
                     file: config_path,
                     config: v,
+                    server_port: 0,
                 });
             }
         };
-        let dict_dir = Path::new(data_dir).join("dicts");
+        let dict_dir = Path::new(data_dir).join(DICTS_DIR);
         let mut cfg = serde_json::from_str::<Configuration>("{}").unwrap();
         cfg.dict_dir = dict_dir.to_str().unwrap().to_string();
         let s = serde_json::to_string(&cfg)?;
@@ -103,6 +106,7 @@ impl Settings {
         Ok(Settings {
             file: config_path,
             config: cfg,
+            server_port: 0,
         })
     }
 

@@ -8,7 +8,7 @@
     },
     "package": {
         "productName": "Beluga",
-        "version": "0.1.1"
+        "version": "0.2.0"
     },
     "tauri": {
         "allowlist": {
@@ -41,7 +41,7 @@
                 "providerShortName": null,
                 "signingIdentity": null
             },
-            "resources": [],
+            "resources": ["./resources/entry.js"],
             "shortDescription": "",
             "targets": "all",
             "windows": {
