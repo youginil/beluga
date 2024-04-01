@@ -83,7 +83,7 @@ async fn get_entry(State(state): State<AppState>, params: Query<EntryQuery>) -> 
     if let Some(dict) = dicts_lock.get(&params.dict_id) {
         let mut dict_lock = dict.lock().await;
         if let Some(content) = dict_lock
-            .search_word(state.cache.clone(), &params.name)
+            .search_entry(state.cache.clone(), &params.name)
             .await
         {
             let js_cache = state.entry_js_cache.read().await;
@@ -98,7 +98,7 @@ async fn get_entry(State(state): State<AppState>, params: Query<EntryQuery>) -> 
             } else {
                 js_cache.to_string()
             };
-            let (dict_css, dict_js) = if let Ok(v) = dict_lock.get_css_js() {
+            let (dict_css, dict_js) = if let Ok(v) = dict_lock.get_css_js().await {
                 v
             } else {
                 warn!("fail to get dict css and js");

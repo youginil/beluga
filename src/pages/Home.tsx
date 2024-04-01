@@ -129,7 +129,7 @@ const Home: Component = () => {
         }
         const wd = selectedWord();
         let idx = wd ? list.indexOf(wd) + 1 : 0;
-        if (idx >= list.length - 1) {
+        if (idx >= list.length) {
             idx = 0;
         }
         selectResult(list[idx]);

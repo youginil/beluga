@@ -8,8 +8,10 @@ use tokio::sync::{Mutex, RwLock};
 
 use crate::settings::{DictItem, Settings};
 
-use beluga_core::beluga::EXT_WORD;
-use beluga_core::dictionary::{Dictionary, NodeCache};
+use beluga_core::{
+    beluga::EXT_ENTRY,
+    dictionary::{Dictionary, NodeCache},
+};
 
 pub struct AppState {
     last_dict_id: Arc<Mutex<u32>>,
@@ -49,7 +51,7 @@ impl AppState {
         drop(dicts_lock);
 
         let mut rd = fs::read_dir(&dir)?;
-        let word_filename = format!("index.{}", EXT_WORD);
+        let word_filename = format!("index.{}", EXT_ENTRY);
         let mut list: Vec<(u32, String)> = vec![];
         while let Some(Ok(item)) = rd.next() {
             let is_dir = item.file_type().is_ok_and(|x| x.is_dir());
@@ -95,7 +97,7 @@ impl AppState {
 
     async fn add_dictionary(&self, file: &str) -> Result<u32> {
         let mut last_cache_id = self.last_cache_id.lock().await;
-        let (dict, cache_id) = Dictionary::new(file, *last_cache_id)?;
+        let (dict, cache_id) = Dictionary::new(file, *last_cache_id).await?;
         *last_cache_id = cache_id + 1;
         let mut last_dict_id = self.last_dict_id.lock().await;
         let mut dicts_lock = self.dicts.write().await;
