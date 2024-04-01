@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Checkout beluga-core
-        uses: actions/checkout@4
+        uses: actions/checkout@v4
         with:
           repository: "youginil/beluga-core"
 
@@ -61,5 +61,5 @@ jobs:
           releaseDraft: true
           prerelease: false
           owner: "youginil"
-          repo: "beluga"
+          repo: "beluga-builder"
           releaseCommitish: "main"
