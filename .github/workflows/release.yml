@@ -12,17 +12,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, windows-latest]
+        platform: [windows-latest]
     runs-on: ${{ matrix.platform }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Checkout beluga-core
-        uses: actions/checkout@v4
-        with:
-          repository: "youginil/beluga-core"
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable

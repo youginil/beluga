@@ -24,7 +24,7 @@ anyhow = "1.0.81"
 axum = "0.7.5"
 axum-extra = { version = "0.9.3", features = ["cookie"] }
 mime_guess = "2.0.4"
-beluga-core = { path = "../../beluga-core" }
+beluga-core = { path = "../beluga-core" }
 
 [features]
 custom-protocol = [ "tauri/custom-protocol" ]
