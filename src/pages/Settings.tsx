@@ -2,11 +2,14 @@ import { A } from '@solidjs/router';
 import { Component, For } from 'solid-js';
 import './Settings.css';
 import { appConfig, setAppConfig } from '../state';
-import { dialog } from '@tauri-apps/api';
+import { dialog, shell } from '@tauri-apps/api';
 import { sendMessage } from '../base';
 import poptip from 'poptip';
 
 const Settings: Component = () => {
+    async function openDictDir() {
+        await shell.open(appConfig.dict_dir);
+    }
     async function chooseDictDir() {
         const dir = await dialog.open({ directory: true, multiple: false });
         if (typeof dir !== 'string') {
@@ -48,6 +51,12 @@ const Settings: Component = () => {
                                 value={appConfig.dict_dir}
                                 readOnly
                             />
+                            <button
+                                class="btn btn-outline-secondary"
+                                onClick={openDictDir}
+                            >
+                                Open
+                            </button>
                             <button
                                 class="btn btn-outline-secondary"
                                 onClick={chooseDictDir}
