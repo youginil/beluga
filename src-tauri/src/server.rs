@@ -98,7 +98,10 @@ async fn get_entry(State(state): State<AppState>, params: Query<EntryQuery>) -> 
             } else {
                 js_cache.to_string()
             };
-            let (dict_css, dict_js) = if let Ok(v) = dict_lock.get_css_js().await {
+            let settings_lock = state.settings.read().await;
+            let dev_mode = settings_lock.config.dev_mode;
+            drop(settings_lock);
+            let (dict_css, dict_js) = if let Ok(v) = dict_lock.get_css_js(dev_mode).await {
                 v
             } else {
                 warn!("fail to get dict css and js");
@@ -184,6 +187,7 @@ async fn get_static_file(
         return (StatusCode::BAD_REQUEST, "No dict id in cookie").into_response();
     };
     let settings_lock = state.settings.read().await;
+    let dev_mode = settings_lock.config.dev_mode;
     let dicts_dir = std::path::Path::new(&settings_lock.config.dict_dir);
     for item in &settings_lock.config.dicts {
         if item.id == dict_id {
@@ -191,11 +195,15 @@ async fn get_static_file(
             let tp = mime_guess::from_path(uri.path()).first_or_octet_stream();
             let mut static_file_cache = state.static_file_cache.write().await;
             if let Some(v) = static_file_cache.get(&file) {
-                return ([(header::CONTENT_TYPE, tp.to_string())], v.clone()).into_response();
+                if dev_mode {
+                    static_file_cache.clear();
+                } else {
+                    return ([(header::CONTENT_TYPE, tp.to_string())], v.clone()).into_response();
+                }
             }
             if file.is_file() {
                 if let Ok(content) = fs::read(&file).await {
-                    if content.len() <= 1024 * 1024 {
+                    if !dev_mode && content.len() <= 5 * 1024 * 1024 {
                         static_file_cache.insert(file, content.clone());
                     }
                     return ([(header::CONTENT_TYPE, tp.to_string())], content).into_response();

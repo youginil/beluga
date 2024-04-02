@@ -68,6 +68,7 @@ pub struct SettingsParams {
     pub dict_dir: Option<String>,
     pub dicts: Option<Vec<DictItem>>,
     pub cache_size: Option<u32>,
+    pub dev_mode: Option<bool>,
 }
 
 #[instrument(skip(ah, state))]
@@ -88,6 +89,9 @@ pub async fn set_settings(
     }
     if let Some(v) = req.cache_size {
         settings.config.cache_size = v;
+    }
+    if let Some(v) = req.dev_mode {
+        settings.config.dev_mode = v;
     }
     settings.save()?;
     drop(settings);

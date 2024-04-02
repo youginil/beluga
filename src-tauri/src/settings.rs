@@ -44,6 +44,10 @@ fn default_ocr_height() -> u32 {
     50
 }
 
+fn default_dev_mode() -> bool {
+    false
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DictItem {
     pub id: u32,
@@ -71,6 +75,8 @@ pub struct Configuration {
     pub ocr_width: u32,
     #[serde(default = "default_ocr_height")]
     pub ocr_height: u32,
+    #[serde(default = "default_dev_mode")]
+    pub dev_mode: bool,
 }
 
 pub struct Settings {

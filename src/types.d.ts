@@ -13,6 +13,7 @@ interface Configuration {
     win_height: number;
     ocr_width: number;
     ocr_height: number;
+    dev_mode: boolean;
 }
 
 type RR<R, T> = { req: R; res: T };

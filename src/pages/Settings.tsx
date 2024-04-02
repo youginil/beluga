@@ -33,6 +33,12 @@ const Settings: Component = () => {
         poptip.info('Settings saved');
     }
 
+    async function toggleDevMode() {
+        setAppConfig('dev_mode', !appConfig.dev_mode);
+        await sendMessage('set_settings', { dev_mode: appConfig.dev_mode });
+        poptip.info('Settings saved');
+    }
+
     return (
         <div class="d-flex flex-column">
             <header class="flex-shrink-0 p-2 bg-light-subtle">
@@ -92,7 +98,7 @@ const Settings: Component = () => {
                         </ul>
                     </div>
                     <div class="mt-3">
-                        <h6 class="form-label">Cache</h6>
+                        <h6 class="form-label">Node Cache</h6>
                         <div class="input-group">
                             <input
                                 type="number"
@@ -103,6 +109,21 @@ const Settings: Component = () => {
                                 }
                             />
                             <span class="input-group-text">M</span>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h6 class="form-label">Developer Mode</h6>
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                checked={appConfig.dev_mode}
+                                id="dev-mode"
+                                onChange={toggleDevMode}
+                            />
+                            <label class="form-check-label" for="dev-mode">
+                                Disable static file cache
+                            </label>
                         </div>
                     </div>
                 </div>
