@@ -19,6 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ssh-key: ${{ secrets.SSH_KEY }}
           submodules: true
 
       - name: Rust setup
