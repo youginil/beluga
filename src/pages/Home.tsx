@@ -11,6 +11,7 @@ import { appConfig } from '../state';
 import { debounce, getIDGenerator, sendMessage } from '../base';
 import { A } from '@solidjs/router';
 import { createStore } from 'solid-js/store';
+import poptip from 'poptip';
 
 interface Word {
     id: number;
@@ -148,6 +149,19 @@ const Home: Component = () => {
         selectResult(list[idx]);
     }
 
+    function showShortcut() {
+        poptip.info(
+            {
+                html: [
+                    '<p><kbd>Tab</kbd> Next Result</p>',
+                    '<p><kbd>Shift</kbd> + <kbd>Tab</kbd> Previous Result</p>',
+                    '<p class="mb-0"><kbd>Shift</kbd> + <kbd>Backspace</kbd> Clear Keyword</p>',
+                ].join(''),
+            },
+            { live: 0 }
+        );
+    }
+
     onMount(() => {
         sendMessage('get_server_port', undefined).then((port) => {
             serverPort = port;
@@ -156,13 +170,13 @@ const Home: Component = () => {
 
     return (
         <div class="d-flex flex-column position-fixed top-0 bottom-0 start-0 end-0">
-            <header class="flex-shrink-0 p-2 bg-light-subtle d-flex align-items-center">
+            <header class="flex-shrink-0 p-2 bg-light-subtle d-flex align-items-center position-relative">
                 <A href="/settings" class="btn btn-light me-2">
                     <i class="bi bi-gear-wide-connected"></i>
                 </A>
                 <input
                     type="text"
-                    class="form-control form-control text-center bg-light-subtle"
+                    class="form-control form-control text-center bg-light-subtle keyword"
                     placeholder="Search..."
                     value={keyword()}
                     onInput={(e) => {
@@ -186,6 +200,12 @@ const Home: Component = () => {
                         }
                     }}
                 />
+                <button
+                    class="btn position-absolute top-0 end-0 m-2"
+                    onClick={showShortcut}
+                >
+                    <i class="bi bi-keyboard-fill"></i>
+                </button>
             </header>
             <div class="flex-grow-1 search-result">
                 <ul

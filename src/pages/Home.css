@@ -1,3 +1,9 @@
+.keyword + button {
+    opacity: 0.2;
+}
+.keyword:focus + button {
+    opacity: 1;
+}
 .search-result {
     overflow-y: auto;
 }
