@@ -112,7 +112,7 @@ const Settings: Component = () => {
                         </div>
                     </div>
                     <div class="mt-3">
-                        <h6 class="form-label">Developer Mode</h6>
+                        <h6 class="form-label">Developer</h6>
                         <div class="form-check">
                             <input
                                 class="form-check-input"
@@ -122,9 +122,17 @@ const Settings: Component = () => {
                                 onChange={toggleDevMode}
                             />
                             <label class="form-check-label" for="dev-mode">
-                                Disable static file cache
+                                Active Developer Mode
                             </label>
                         </div>
+                        <p class="fst-italic fw-lighter">
+                            Developer Mode: disable static file cache in your
+                            dictionary directory
+                        </p>
+                        <p>
+                            <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>D</kbd>{' '}
+                            Open Developer Tools
+                        </p>
                     </div>
                 </div>
             </div>
