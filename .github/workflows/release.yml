@@ -3,7 +3,6 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
 
 jobs:
   release:
@@ -12,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, windows-latest]
+        platform: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -59,5 +58,5 @@ jobs:
           releaseDraft: true
           prerelease: false
           owner: "youginil"
-          repo: "beluga-builder"
+          repo: "beluga-project"
           releaseCommitish: "main"

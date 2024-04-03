@@ -1,6 +1,6 @@
 [package]
 name = "beluga"
-version = "0.1.0"
+version = "0.1.1"
 description = "A dictionary application"
 default-run = "beluga"
 edition = "2021"
