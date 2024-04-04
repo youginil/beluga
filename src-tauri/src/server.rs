@@ -163,7 +163,8 @@ async fn get_resource(
             .search_resource(state.cache.clone(), &params.name)
             .await
         {
-            v.into_response()
+            let tp = mime_guess::from_path(&params.name).first_or_octet_stream();
+            ([(header::CONTENT_TYPE, tp.to_string())], v).into_response()
         } else {
             StatusCode::NOT_FOUND.into_response()
         }
