@@ -67,10 +67,17 @@ async fn main() {
                     let window = if let Some(v) = app.get_window("main") {
                         v
                     } else {
-                        WindowBuilder::new(app, "main", Default::default())
-                            .title("Beluga")
-                            .build()
-                            .unwrap()
+                        WindowBuilder::from_config(
+                            app,
+                            app.config()
+                                .tauri
+                                .windows
+                                .get(0)
+                                .expect("no window in config")
+                                .clone(),
+                        )
+                        .build()
+                        .expect("fail to create main window")
                     };
                     window.show().unwrap();
                 }
