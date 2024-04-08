@@ -64,8 +64,8 @@ async fn main() {
         .on_system_tray_event(|app, event| match event {
             SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
                 "main" => {
-                    let window = if let Some(v) = app.get_window("main") {
-                        v
+                    if let Some(win) = app.get_window("main") {
+                        win.set_focus().expect("fail to focus window");
                     } else {
                         WindowBuilder::from_config(
                             app,
@@ -78,8 +78,9 @@ async fn main() {
                         )
                         .build()
                         .expect("fail to create main window")
+                        .show()
+                        .expect("fail to show main window");
                     };
-                    window.show().unwrap();
                 }
                 "quit" => {
                     std::process::exit(0);

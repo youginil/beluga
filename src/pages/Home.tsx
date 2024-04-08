@@ -52,6 +52,7 @@ const Home: Component = () => {
         searchId = nextSearchId();
         const theSearchId = searchId;
         let dictIndex = 0;
+        const exactResults: number[] = new Array(dicts().length).fill(-1);
 
         async function searchFromDict(i: number, kw: string) {
             const dict = dicts()[i];
@@ -68,6 +69,8 @@ const Home: Component = () => {
                 if (result().length === 0) {
                     setShowWords(true);
                 }
+                let exactIdx = -1;
+                let fuzzyIdx = -1;
                 batch(() => {
                     for (let j = 0; j < list.length; j++) {
                         const wd = list[j];
@@ -76,14 +79,51 @@ const Home: Component = () => {
                             name: wd,
                             dict: dict.name,
                         };
-                        if (wd.toLowerCase() === kw.toLowerCase()) {
-                            setWords('exact', words.exact.length, item);
+                        const exactly = wd.toLowerCase() === kw.toLowerCase();
+                        if (exactly) {
+                            if (exactResults[i] === -1) {
+                                exactResults[i] = 1;
+                            } else {
+                                exactResults[i]++;
+                            }
+                        }
+                        const wl = exactly ? words.exact : words.fuzzy;
+                        let targetIdx = exactly ? exactIdx : fuzzyIdx;
+                        if (targetIdx === -1) {
+                            for (let x = 0; x < wl.length; x++) {
+                                const idx = dicts().findIndex(
+                                    (v) => v.id === wl[x].id
+                                );
+                                if (idx > i) {
+                                    targetIdx = x;
+                                    break;
+                                }
+                            }
+                            if (targetIdx === -1) {
+                                targetIdx = wl.length;
+                            }
                         } else {
-                            setWords('fuzzy', words.fuzzy.length, item);
+                            targetIdx++;
+                        }
+                        setWords(exactly ? 'exact' : 'fuzzy', [
+                            ...wl.slice(0, targetIdx),
+                            item,
+                            ...wl.slice(targetIdx),
+                        ]);
+                        if (exactly) {
+                            exactIdx = targetIdx;
+                        } else {
+                            fuzzyIdx = targetIdx;
                         }
                     }
                 });
-                if (selectedWord() === null && words.exact.length > 0) {
+                if (exactResults[i] === -1) {
+                    exactResults[i] = 0;
+                }
+                if (
+                    exactResults.slice(0, i).every((item) => item === 0) &&
+                    words.exact.length > 0
+                ) {
                     selectResult(words.exact[0]);
                 }
             }

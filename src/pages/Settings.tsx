@@ -25,6 +25,28 @@ const Settings: Component = () => {
         poptip.info('Settings saved');
     }
 
+    async function sortDicts(i: number, up: boolean) {
+        const dicts = appConfig.dicts;
+        let dl: DictItem[] = [];
+        if (up) {
+            dl = [
+                ...dicts.slice(0, i - 1),
+                dicts[i],
+                dicts[i - 1],
+                ...dicts.slice(i + 1),
+            ];
+        } else {
+            dl = [
+                ...dicts.slice(0, i),
+                dicts[i + 1],
+                dicts[i],
+                ...dicts.slice(i + 2),
+            ];
+        }
+        await sendMessage('set_settings', { dicts: dl });
+        poptip.info('Settings saved');
+    }
+
     async function changeCacheSize(size: number) {
         if (size <= 0) {
             return poptip.error('invalid cache size');
@@ -76,22 +98,47 @@ const Settings: Component = () => {
                         <ul class="list-group">
                             <For each={appConfig.dicts}>
                                 {(item, index) => (
-                                    <li class="list-group-item">
-                                        <input
-                                            id={'dict-' + item.id}
-                                            class="form-check-input me-1"
-                                            type="checkbox"
-                                            checked={item.available}
-                                            onChange={() =>
-                                                toggleDictAvailable(index())
-                                            }
-                                        />
-                                        <label
-                                            class="form-check-label"
-                                            for={'dict-' + item.id}
-                                        >
-                                            {item.name}
-                                        </label>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <input
+                                                id={'dict-' + item.id}
+                                                class="form-check-input me-1"
+                                                type="checkbox"
+                                                checked={item.available}
+                                                onChange={() =>
+                                                    toggleDictAvailable(index())
+                                                }
+                                            />
+                                            <label
+                                                class="form-check-label"
+                                                for={'dict-' + item.id}
+                                            >
+                                                {item.name}
+                                            </label>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <button
+                                                class="btn btn-sm btn-light"
+                                                onClick={() =>
+                                                    sortDicts(index(), true)
+                                                }
+                                                disabled={index() === 0}
+                                            >
+                                                <i class="bi bi-arrow-up"></i>
+                                            </button>
+                                            <button
+                                                class="btn btn-sm btn-light ms-2"
+                                                onClick={() =>
+                                                    sortDicts(index(), false)
+                                                }
+                                                disabled={
+                                                    index() ===
+                                                    appConfig.dicts.length - 1
+                                                }
+                                            >
+                                                <i class="bi bi-arrow-down"></i>
+                                            </button>
+                                        </div>
                                     </li>
                                 )}
                             </For>
@@ -113,6 +160,14 @@ const Settings: Component = () => {
                     </div>
                     <div class="mt-3">
                         <h6 class="form-label">Developer</h6>
+                        <p>
+                            <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>D</kbd>{' '}
+                            Open Developer Tools
+                        </p>
+                        <span class="fst-italic fw-lighter">
+                            Developer Mode: disable static file cache in your
+                            dictionary directory
+                        </span>
                         <div class="form-check">
                             <input
                                 class="form-check-input"
@@ -125,14 +180,6 @@ const Settings: Component = () => {
                                 Active Developer Mode
                             </label>
                         </div>
-                        <p class="fst-italic fw-lighter">
-                            Developer Mode: disable static file cache in your
-                            dictionary directory
-                        </p>
-                        <p>
-                            <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>D</kbd>{' '}
-                            Open Developer Tools
-                        </p>
                     </div>
                 </div>
             </div>
