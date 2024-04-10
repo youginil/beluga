@@ -120,10 +120,16 @@ const Home: Component = () => {
                 if (exactResults[i] === -1) {
                     exactResults[i] = 0;
                 }
-                if (
-                    exactResults.slice(0, i).every((item) => item === 0) &&
-                    words.exact.length > 0
-                ) {
+            } else {
+                exactResults[i] = 0;
+            }
+            for (let n = 0; n < exactResults.length; n++) {
+                const v = exactResults[n];
+                if (v === -1) {
+                    break;
+                } else if (v === 0) {
+                    continue;
+                } else {
                     selectResult(words.exact[0]);
                 }
             }

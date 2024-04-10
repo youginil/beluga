@@ -13,13 +13,11 @@
         "bootstrap": "^5.3.3",
         "bootstrap-icons": "^1.11.3",
         "poptip": "^0.1.4",
-        "sizzle": "^2.3.10",
         "solid-js": "^1.8.16"
     },
     "devDependencies": {
         "@tauri-apps/cli": "^1.5.11",
         "@types/node": "^20.11.30",
-        "@types/sizzle": "^2.3.8",
         "sharp": "^0.33.3",
         "typescript": "^5.4.3",
         "vite": "^5.2.6",

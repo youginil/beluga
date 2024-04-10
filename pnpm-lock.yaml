@@ -20,9 +20,6 @@ dependencies:
   poptip:
     specifier: ^0.1.4
     version: 0.1.4
-  sizzle:
-    specifier: ^2.3.10
-    version: 2.3.10
   solid-js:
     specifier: ^1.8.16
     version: 1.8.16
@@ -34,9 +31,6 @@ devDependencies:
   '@types/node':
     specifier: ^20.11.30
     version: 20.11.30
-  '@types/sizzle':
-    specifier: ^2.3.8
-    version: 2.3.8
   sharp:
     specifier: ^0.33.3
     version: 0.33.3
@@ -995,10 +989,6 @@ packages:
       undici-types: 5.26.5
     dev: true
 
-  /@types/sizzle@2.3.8:
-    resolution: {integrity: sha512-0vWLNK2D5MT9dg0iOo8GlKguPAU02QjmZitPEsXRuJXU/OGIOt9vT9Fc26wtYuavLxtO45v9PGleoL9Z0k1LHg==}
-    dev: true
-
   /ansi-styles@3.2.1:
     resolution: {integrity: sha512-VT0ZI6kZRdTh8YyJw3SMbYm/u+NqfsAxEpWO0Pf9sq8/e94WxxOpPKx9FR1FlyCtOVDNOQ+8ntlqFxiRc+r5qA==}
     engines: {node: '>=4'}
@@ -1355,10 +1345,6 @@ packages:
     dependencies:
       is-arrayish: 0.3.2
     dev: true
-
-  /sizzle@2.3.10:
-    resolution: {integrity: sha512-kPGev+SiByuzi/YPDTqCwdKLWCaN9+14ve86yH0gP6Efue04xjLYWJrcLC6y1buFyIVXkwHNXPsOTEd1MYVPbQ==}
-    dev: false
 
   /solid-js@1.8.16:
     resolution: {integrity: sha512-rja94MNU9flF3qQRLNsu60QHKBDKBkVE1DldJZPIfn2ypIn3NV2WpSbGTQIvsyGPBo+9E2IMjwqnqpbgfWuzeg==}
