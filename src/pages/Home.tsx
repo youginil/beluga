@@ -130,7 +130,10 @@ const Home: Component = () => {
                 } else if (v === 0) {
                     continue;
                 } else {
-                    selectResult(words.exact[0]);
+                    if (selectedWord() === null) {
+                        selectResult(words.exact[0]);
+                    }
+                    break;
                 }
             }
             if (dictIndex < dicts().length - 1) {
