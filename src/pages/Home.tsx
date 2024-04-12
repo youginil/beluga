@@ -59,8 +59,8 @@ const Home: Component = () => {
             const list = await sendMessage('search', {
                 id: dict.id,
                 kw,
-                fuzzy_limit: 5,
-                result_limit: 10,
+                prefix_limit: appConfig.prefix_limit,
+                phrase_limit: appConfig.phrase_limit,
             });
             if (theSearchId !== searchId) {
                 return;

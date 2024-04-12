@@ -13,6 +13,8 @@ interface Configuration {
     win_height: number;
     ocr_width: number;
     ocr_height: number;
+    prefix_limit: number;
+    phrase_limit: number;
     dev_mode: boolean;
 }
 
@@ -22,7 +24,7 @@ type IpcMessage = {
     open_devtools: RR<void, void>;
     get_server_port: RR<void, number>;
     search: RR<
-        { id: number; kw: string; fuzzy_limit: number; result_limit: number },
+        { id: number; kw: string; prefix_limit: number; phrase_limit: number },
         string[]
     >;
     resize_cache: RR<number, void>;

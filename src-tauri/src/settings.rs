@@ -44,6 +44,14 @@ fn default_ocr_height() -> u32 {
     50
 }
 
+fn default_prefix_limit() -> u32 {
+    5
+}
+
+fn default_phrase_limit() -> u32 {
+    10
+}
+
 fn default_dev_mode() -> bool {
     false
 }
@@ -75,6 +83,10 @@ pub struct Configuration {
     pub ocr_width: u32,
     #[serde(default = "default_ocr_height")]
     pub ocr_height: u32,
+    #[serde(default = "default_prefix_limit")]
+    pub prefix_limit: u32,
+    #[serde(default = "default_phrase_limit")]
+    pub phrase_limit: u32,
     #[serde(default = "default_dev_mode")]
     pub dev_mode: bool,
 }

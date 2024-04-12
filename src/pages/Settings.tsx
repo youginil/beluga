@@ -47,7 +47,34 @@ const Settings: Component = () => {
         poptip.info('Settings saved');
     }
 
+    async function changePrefixNumber(n: number) {
+        if (Number.isNaN(n)) {
+            n = 5;
+        }
+        n = Math.ceil(n);
+        if (n < 1) {
+            n = 1;
+        }
+        await sendMessage('set_settings', { prefix_limit: n });
+        poptip.info('Settings saved');
+    }
+
+    async function changePhraseNumber(n: number) {
+        if (Number.isNaN(n)) {
+            n = 10;
+        }
+        n = Math.ceil(n);
+        if (n < 0) {
+            n = 0;
+        }
+        await sendMessage('set_settings', { phrase_limit: n });
+        poptip.info('Settings saved');
+    }
+
     async function changeCacheSize(size: number) {
+        if (Number.isNaN(size)) {
+            size = 100;
+        }
         if (size <= 0) {
             return poptip.error('invalid cache size');
         }
@@ -62,7 +89,7 @@ const Settings: Component = () => {
     }
 
     return (
-        <div class="d-flex flex-column">
+        <div class="d-flex flex-column position-fixed top-0 bottom-0 start-0 end-0">
             <header class="flex-shrink-0 p-2 bg-light-subtle">
                 <A href="/" class="btn btn-light" end={true}>
                     <i class="bi bi-arrow-left"></i>
@@ -143,6 +170,35 @@ const Settings: Component = () => {
                                 )}
                             </For>
                         </ul>
+                    </div>
+                    <div class="mt-3">
+                        <h6 class="form-label">Result</h6>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">
+                                Result for prefix-matched
+                            </span>
+                            <input
+                                type="number"
+                                class="form-control"
+                                value={appConfig.prefix_limit}
+                                onChange={(e) => {
+                                    changePrefixNumber(+e.target.value);
+                                }}
+                            />
+                        </div>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">
+                                Result for phrase-matched
+                            </span>
+                            <input
+                                type="number"
+                                class="form-control"
+                                value={appConfig.phrase_limit}
+                                onChange={(e) => {
+                                    changePhraseNumber(+e.target.value);
+                                }}
+                            />
+                        </div>
                     </div>
                     <div class="mt-3">
                         <h6 class="form-label">Node Cache</h6>

@@ -28,8 +28,8 @@ pub async fn get_server_port(state: State<'_, AppState>) -> Result<u32> {
 pub struct SearchParams {
     pub id: u32,
     pub kw: String,
-    pub fuzzy_limit: usize,
-    pub result_limit: usize,
+    pub prefix_limit: usize,
+    pub phrase_limit: usize,
 }
 
 #[instrument(skip(state))]
@@ -43,7 +43,7 @@ pub async fn search(state: State<'_, AppState>, req: SearchParams) -> Result<Vec
     let mut d = dict.lock().await;
     let cache = state.cache.clone();
     let r = d
-        .search(cache, &req.kw, req.fuzzy_limit, req.result_limit)
+        .search(cache, &req.kw, req.prefix_limit, req.phrase_limit)
         .await;
     Ok(r)
 }
@@ -68,6 +68,8 @@ pub struct SettingsParams {
     pub dict_dir: Option<String>,
     pub dicts: Option<Vec<DictItem>>,
     pub cache_size: Option<u32>,
+    pub prefix_limit: Option<u32>,
+    pub phrase_limit: Option<u32>,
     pub dev_mode: Option<bool>,
 }
 
@@ -89,6 +91,12 @@ pub async fn set_settings(
     }
     if let Some(v) = req.cache_size {
         settings.config.cache_size = v;
+    }
+    if let Some(v) = req.prefix_limit {
+        settings.config.prefix_limit = v;
+    }
+    if let Some(v) = req.phrase_limit {
+        settings.config.phrase_limit = v;
     }
     if let Some(v) = req.dev_mode {
         settings.config.dev_mode = v;
