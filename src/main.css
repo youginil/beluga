@@ -1,0 +1,15 @@
+.responsive-wrapper {
+    padding: 10px;
+}
+
+@media (min-width: 768px) {
+    .responsive-wrapper {
+        width: 768px;
+        margin: 0 auto;
+    }
+}
+@media (max-width: 768px) {
+    .responsive-wrapper {
+        width: 100%;
+    }
+}

@@ -6,24 +6,29 @@ use std::{collections::HashMap, fs, io, sync::Arc};
 use beluga_core::dictionary::NodeCache;
 use server::start_server;
 use tauri::{
-    api::path::app_log_dir, generate_handler, Config, CustomMenuItem, Manager, SystemTray,
-    SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem, WindowBuilder,
+    api::path::{app_data_dir, app_log_dir},
+    generate_handler, Config, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
+    SystemTrayMenuItem, WindowBuilder,
 };
 
 use handlers::{
-    get_server_port, get_settings, open_devtools, reload_dicts, resize_cache, search, set_settings,
+    add_word, delete_words, get_server_port, get_settings, get_word_list, open_devtools,
+    reload_dicts, resize_cache, search, set_settings,
 };
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 use tracing::debug;
 use tracing_subscriber::fmt::format::FmtSpan;
 
-use crate::{base::AppState, settings::Settings};
+use crate::{base::AppState, database::Database, settings::Settings};
 
 mod base;
+mod database;
 mod error;
 mod handlers;
+mod model;
 mod server;
 mod settings;
+mod utils;
 
 #[tokio::main]
 async fn main() {
@@ -34,6 +39,8 @@ async fn main() {
     } else {
         tracing::Level::INFO
     };
+    let mut config = Config::default();
+    config.tauri.bundle.identifier = "com.youginil.beluga".to_string();
     let subscriber = tracing_subscriber::fmt()
         .with_max_level(level)
         .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
@@ -44,8 +51,6 @@ async fn main() {
         subscriber.with_writer(io::stderr).init();
         None
     } else {
-        let mut config = Config::default();
-        config.tauri.bundle.identifier = "beluga".to_string();
         let log_dir = app_log_dir(&config).expect("No log dir");
         fs::create_dir_all(&log_dir).expect("Fail to create log directory");
         let file_appender = tracing_appender::rolling::daily(log_dir, "");
@@ -53,6 +58,11 @@ async fn main() {
         subscriber.with_writer(non_blocking).init();
         Some(guard)
     };
+
+    let data_dir = app_data_dir(&config).expect("no app data dir");
+    fs::create_dir_all(&data_dir).expect("fail to create data dir");
+    let db = Database::new(data_dir).await;
+    let db = Arc::new(Mutex::new(db));
 
     let tray_menu = SystemTrayMenu::new()
         .add_item(CustomMenuItem::new("main".to_string(), "Beluga"))
@@ -114,7 +124,7 @@ async fn main() {
                 start_server(settings2, dicts2, cache2, ah2).await;
             });
 
-            let state = AppState::new(settings, dicts, cache);
+            let state = AppState::new(settings, dicts, cache, db);
             app.manage(state);
 
             let ah = app.app_handle();
@@ -137,6 +147,9 @@ async fn main() {
             get_settings,
             set_settings,
             reload_dicts,
+            get_word_list,
+            add_word,
+            delete_words,
         ])
         .build(tauri::generate_context!())
         .expect("error while running application")

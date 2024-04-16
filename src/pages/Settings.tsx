@@ -1,10 +1,9 @@
-import { A } from '@solidjs/router';
 import { Component, For } from 'solid-js';
-import './Settings.css';
 import { appConfig, setAppConfig } from '../state';
 import { dialog, shell } from '@tauri-apps/api';
 import { sendMessage } from '../base';
 import poptip from 'poptip';
+import BackPage from '../components/BackPage';
 
 const Settings: Component = () => {
     async function openDictDir() {
@@ -89,157 +88,148 @@ const Settings: Component = () => {
     }
 
     return (
-        <div class="d-flex flex-column position-fixed top-0 bottom-0 start-0 end-0">
-            <header class="flex-shrink-0 p-2 bg-light-subtle">
-                <A href="/" class="btn btn-light" end={true}>
-                    <i class="bi bi-arrow-left"></i>
-                </A>
-            </header>
-            <div class="flex-grow-1 overflow-y-auto">
-                <div class="settings-wrapper">
-                    <div>
-                        <h6 class="form-label">Dictionary Directory</h6>
-                        <div class="input-group mb-3">
-                            <input
-                                type="text"
-                                class="form-control"
-                                value={appConfig.dict_dir}
-                                readOnly
-                            />
-                            <button
-                                class="btn btn-outline-secondary"
-                                onClick={openDictDir}
-                            >
-                                Open
-                            </button>
-                            <button
-                                class="btn btn-outline-secondary"
-                                onClick={chooseDictDir}
-                            >
-                                Choose
-                            </button>
-                        </div>
+        <BackPage title="Settings">
+            <div class="responsive-wrapper">
+                <div>
+                    <h6 class="form-label">Dictionary Directory</h6>
+                    <div class="input-group mb-3">
+                        <input
+                            type="text"
+                            class="form-control"
+                            value={appConfig.dict_dir}
+                            readOnly
+                        />
+                        <button
+                            class="btn btn-outline-secondary"
+                            onClick={openDictDir}
+                        >
+                            Open
+                        </button>
+                        <button
+                            class="btn btn-outline-secondary"
+                            onClick={chooseDictDir}
+                        >
+                            Choose
+                        </button>
                     </div>
-                    <div class="mt-3">
-                        <h6 class="form-label">Dictionaries</h6>
-                        <ul class="list-group">
-                            <For each={appConfig.dicts}>
-                                {(item, index) => (
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <input
-                                                id={'dict-' + item.id}
-                                                class="form-check-input me-1"
-                                                type="checkbox"
-                                                checked={item.available}
-                                                onChange={() =>
-                                                    toggleDictAvailable(index())
-                                                }
-                                            />
-                                            <label
-                                                class="form-check-label"
-                                                for={'dict-' + item.id}
-                                            >
-                                                {item.name}
-                                            </label>
-                                        </div>
-                                        <div class="flex-shrink-0">
-                                            <button
-                                                class="btn btn-sm btn-light"
-                                                onClick={() =>
-                                                    sortDicts(index(), true)
-                                                }
-                                                disabled={index() === 0}
-                                            >
-                                                <i class="bi bi-arrow-up"></i>
-                                            </button>
-                                            <button
-                                                class="btn btn-sm btn-light ms-2"
-                                                onClick={() =>
-                                                    sortDicts(index(), false)
-                                                }
-                                                disabled={
-                                                    index() ===
-                                                    appConfig.dicts.length - 1
-                                                }
-                                            >
-                                                <i class="bi bi-arrow-down"></i>
-                                            </button>
-                                        </div>
-                                    </li>
-                                )}
-                            </For>
-                        </ul>
-                    </div>
-                    <div class="mt-3">
-                        <h6 class="form-label">Result</h6>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">
-                                Result for prefix-matched
-                            </span>
-                            <input
-                                type="number"
-                                class="form-control"
-                                value={appConfig.prefix_limit}
-                                onChange={(e) => {
-                                    changePrefixNumber(+e.target.value);
-                                }}
-                            />
-                        </div>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text">
-                                Result for phrase-matched
-                            </span>
-                            <input
-                                type="number"
-                                class="form-control"
-                                value={appConfig.phrase_limit}
-                                onChange={(e) => {
-                                    changePhraseNumber(+e.target.value);
-                                }}
-                            />
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <h6 class="form-label">Node Cache</h6>
-                        <div class="input-group">
-                            <input
-                                type="number"
-                                class="form-control"
-                                value={appConfig.cache_size}
-                                onChange={(e) =>
-                                    changeCacheSize(+e.target.value)
-                                }
-                            />
-                            <span class="input-group-text">M</span>
-                        </div>
-                    </div>
-                    <div class="mt-3">
-                        <h6 class="form-label">Developer</h6>
-                        <p>
-                            <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>D</kbd>{' '}
-                            Open Developer Tools
-                        </p>
-                        <span class="fst-italic fw-lighter">
-                            Developer Mode: disable static file cache in your
-                            dictionary directory
+                </div>
+                <div class="mt-3">
+                    <h6 class="form-label">Dictionaries</h6>
+                    <ul class="list-group">
+                        <For each={appConfig.dicts}>
+                            {(item, index) => (
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <input
+                                            id={'dict-' + item.id}
+                                            class="form-check-input me-1"
+                                            type="checkbox"
+                                            checked={item.available}
+                                            onChange={() =>
+                                                toggleDictAvailable(index())
+                                            }
+                                        />
+                                        <label
+                                            class="form-check-label"
+                                            for={'dict-' + item.id}
+                                        >
+                                            {item.name}
+                                        </label>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <button
+                                            class="btn btn-sm btn-light"
+                                            onClick={() =>
+                                                sortDicts(index(), true)
+                                            }
+                                            disabled={index() === 0}
+                                        >
+                                            <i class="bi bi-arrow-up"></i>
+                                        </button>
+                                        <button
+                                            class="btn btn-sm btn-light ms-2"
+                                            onClick={() =>
+                                                sortDicts(index(), false)
+                                            }
+                                            disabled={
+                                                index() ===
+                                                appConfig.dicts.length - 1
+                                            }
+                                        >
+                                            <i class="bi bi-arrow-down"></i>
+                                        </button>
+                                    </div>
+                                </li>
+                            )}
+                        </For>
+                    </ul>
+                </div>
+                <div class="mt-3">
+                    <h6 class="form-label">Result</h6>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">
+                            Result for prefix-matched
                         </span>
-                        <div class="form-check">
-                            <input
-                                class="form-check-input"
-                                type="checkbox"
-                                checked={appConfig.dev_mode}
-                                id="dev-mode"
-                                onChange={toggleDevMode}
-                            />
-                            <label class="form-check-label" for="dev-mode">
-                                Active Developer Mode
-                            </label>
-                        </div>
+                        <input
+                            type="number"
+                            class="form-control"
+                            value={appConfig.prefix_limit}
+                            onChange={(e) => {
+                                changePrefixNumber(+e.target.value);
+                            }}
+                        />
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">
+                            Result for phrase-matched
+                        </span>
+                        <input
+                            type="number"
+                            class="form-control"
+                            value={appConfig.phrase_limit}
+                            onChange={(e) => {
+                                changePhraseNumber(+e.target.value);
+                            }}
+                        />
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6 class="form-label">Node Cache</h6>
+                    <div class="input-group">
+                        <input
+                            type="number"
+                            class="form-control"
+                            value={appConfig.cache_size}
+                            onChange={(e) => changeCacheSize(+e.target.value)}
+                        />
+                        <span class="input-group-text">M</span>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6 class="form-label">Developer</h6>
+                    <p>
+                        <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>D</kbd> Open
+                        Developer Tools
+                    </p>
+                    <span class="fst-italic fw-lighter">
+                        Developer Mode: disable static file cache in your
+                        dictionary directory
+                    </span>
+                    <div class="form-check">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            checked={appConfig.dev_mode}
+                            id="dev-mode"
+                            onChange={toggleDevMode}
+                        />
+                        <label class="form-check-label" for="dev-mode">
+                            Active Developer Mode
+                        </label>
                     </div>
                 </div>
             </div>
-        </div>
+        </BackPage>
     );
 };
 

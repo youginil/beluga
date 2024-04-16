@@ -1,0 +1,6 @@
+.word-list > * {
+    cursor: pointer;
+}
+.word-list > *:hover {
+    background-color: #e2e3e5;
+}

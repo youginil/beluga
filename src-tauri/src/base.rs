@@ -1,4 +1,5 @@
 use anyhow::Result;
+use serde::Serialize;
 use std::path::PathBuf;
 use std::{collections::HashMap, fs, path::Path, sync::Arc};
 use tauri::AppHandle;
@@ -6,6 +7,7 @@ use tracing::{info, warn};
 
 use tokio::sync::{Mutex, RwLock};
 
+use crate::database::Database;
 use crate::settings::{DictItem, Settings};
 
 use beluga_core::{
@@ -19,6 +21,7 @@ pub struct AppState {
     dicts: Arc<RwLock<HashMap<u32, Arc<Mutex<Dictionary>>>>>,
     pub cache: Arc<RwLock<NodeCache>>,
     pub settings: Arc<RwLock<Settings>>,
+    pub db: Arc<Mutex<Database>>,
 }
 
 impl AppState {
@@ -26,6 +29,7 @@ impl AppState {
         settings: Arc<RwLock<Settings>>,
         dicts: Arc<RwLock<HashMap<u32, Arc<Mutex<Dictionary>>>>>,
         cache: Arc<RwLock<NodeCache>>,
+        db: Arc<Mutex<Database>>,
     ) -> Self {
         Self {
             last_dict_id: Arc::new(Mutex::new(1)),
@@ -33,6 +37,7 @@ impl AppState {
             dicts,
             cache,
             settings,
+            db,
         }
     }
 
@@ -128,4 +133,13 @@ pub fn get_resource_directory(ah: AppHandle) -> PathBuf {
     #[cfg(not(debug_assertions))]
     let dir = ah.path_resolver().resolve_resource("resources").unwrap();
     dir
+}
+
+#[derive(Serialize)]
+pub struct Pagination<T> {
+    pub page: u32,
+    pub size: u32,
+    pub pages: u32,
+    pub total: u32,
+    pub list: Vec<T>,
 }

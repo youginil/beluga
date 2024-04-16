@@ -10,14 +10,16 @@ import App from './App';
 import Home from './pages/Home';
 import Settings from './pages/Settings';
 import { sendMessage } from './base';
-import { setAppConfig } from './state';
+import { setAppConfig, setServerPort } from './state';
 import { event } from '@tauri-apps/api';
+import Words from './pages/Words';
 
 render(
     () => (
         <Router root={App}>
             <Route path="/" component={Home} />
             <Route path="/settings" component={Settings} />
+            <Route path="/words" component={Words}></Route>
         </Router>
     ),
     document.getElementById('root')!
@@ -40,4 +42,8 @@ document.addEventListener('keydown', async (e) => {
 
 sendMessage('get_settings', undefined).then((v) => {
     setAppConfig(v);
+});
+
+sendMessage('get_server_port', undefined).then((port) => {
+    setServerPort(port);
 });

@@ -18,19 +18,45 @@ interface Configuration {
     dev_mode: boolean;
 }
 
+interface WordModel {
+    id: number;
+    name: string;
+    create_time: number;
+}
+
+type Pagination<T> = {
+    page: number;
+    size: number;
+    pages: number;
+    total: number;
+    list: T[];
+};
+
 type RR<R, T> = { req: R; res: T };
 
 type IpcMessage = {
     open_devtools: RR<void, void>;
     get_server_port: RR<void, number>;
     search: RR<
-        { id: number; kw: string; prefix_limit: number; phrase_limit: number },
+        {
+            id: number;
+            kw: string;
+            strict: boolean;
+            prefix_limit: number;
+            phrase_limit: number;
+        },
         string[]
     >;
     resize_cache: RR<number, void>;
     get_settings: RR<void, Configuration>;
     set_settings: RR<Partial<Configuration>, void>;
     reload_dicts: RR<void, void>;
+    get_word_list: RR<
+        { page: number; size: number; order?: string },
+        Pagination<WordModel>
+    >;
+    add_word: RR<string, void>;
+    delete_words: RR<number[], void>;
 };
 
 interface ChildMessage {

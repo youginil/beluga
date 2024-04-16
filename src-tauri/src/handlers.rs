@@ -1,6 +1,9 @@
 use crate::{
+    base::Pagination,
     error::Result,
+    model::{word::WordModel, RowID},
     settings::{Configuration, DictItem},
+    utils::current_timestamp,
 };
 use serde::Deserialize;
 use tauri::{command, AppHandle, Manager, State};
@@ -28,6 +31,7 @@ pub async fn get_server_port(state: State<'_, AppState>) -> Result<u32> {
 pub struct SearchParams {
     pub id: u32,
     pub kw: String,
+    pub strict: bool,
     pub prefix_limit: usize,
     pub phrase_limit: usize,
 }
@@ -43,7 +47,13 @@ pub async fn search(state: State<'_, AppState>, req: SearchParams) -> Result<Vec
     let mut d = dict.lock().await;
     let cache = state.cache.clone();
     let r = d
-        .search(cache, &req.kw, req.prefix_limit, req.phrase_limit)
+        .search(
+            cache,
+            &req.kw,
+            req.strict,
+            req.prefix_limit,
+            req.phrase_limit,
+        )
         .await;
     Ok(r)
 }
@@ -117,5 +127,65 @@ pub async fn set_settings(
 #[command]
 pub async fn reload_dicts(state: State<'_, AppState>) -> Result<()> {
     state.load_dictionaries().await?;
+    Ok(())
+}
+
+#[derive(Deserialize, Debug)]
+pub struct WordListParams {
+    pub page: u32,
+    pub size: u32,
+    pub order: Option<String>,
+}
+
+#[instrument(skip(state))]
+#[command]
+pub async fn get_word_list(
+    state: State<'_, AppState>,
+    req: WordListParams,
+) -> Result<Pagination<WordModel>> {
+    let mut page = req.page;
+    let size = req.size;
+    let mut db = state.db.lock().await;
+    let total = WordModel::count(&mut db.conn).await?;
+    let pages = ((total as f64) / (size as f64)).ceil() as u32;
+    if page > pages {
+        page = pages;
+    }
+    let mut pg: Pagination<WordModel> = Pagination {
+        page,
+        size,
+        pages,
+        total,
+        list: vec![],
+    };
+    if total == 0 {
+        return Ok(pg);
+    }
+    let list = WordModel::list(&mut db.conn, page as usize, size as usize, req.order).await?;
+    pg.list = list;
+    Ok(pg)
+}
+
+#[instrument(skip(state))]
+#[command]
+pub async fn add_word(state: State<'_, AppState>, req: String) -> Result<()> {
+    let mut db = state.db.lock().await;
+    if WordModel::exist_by_name(&mut db.conn, &req).await? {
+        return Ok(());
+    }
+    let mut word = WordModel {
+        id: 0,
+        name: req,
+        create_time: current_timestamp(),
+    };
+    word.insert(&mut db.conn).await?;
+    Ok(())
+}
+
+#[instrument(skip(state))]
+#[command]
+pub async fn delete_words(state: State<'_, AppState>, req: Vec<RowID>) -> Result<()> {
+    let mut db = state.db.lock().await;
+    WordModel::delete(&mut db.conn, &req[..]).await?;
     Ok(())
 }
