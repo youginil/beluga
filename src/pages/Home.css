@@ -24,7 +24,7 @@
     border-bottom: 1px solid #ddd;
 }
 .search-words > .selected {
-    background-color: #6c757d;
+    background-color: #0d6efd;
     color: #ffffff;
 }
 .search-words > *:not(.selected):hover {

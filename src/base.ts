@@ -126,7 +126,9 @@ export function makeSearcher(
                             name: wd,
                             dict: dict.name,
                         };
-                        const exactly = wd.toLowerCase() === kw.toLowerCase();
+                        const exactly = strict
+                            ? wd === kw
+                            : wd.toLowerCase() === kw.toLowerCase();
                         if (exactly) {
                             if (exactResults[i] === -1) {
                                 exactResults[i] = 1;
