@@ -60,7 +60,7 @@ export function getIDGenerator() {
     };
 }
 
-interface Word {
+export interface Word {
     id: number;
     name: string;
     dict: string;

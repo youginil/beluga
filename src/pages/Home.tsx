@@ -7,16 +7,10 @@ import {
     createSignal,
 } from 'solid-js';
 import './Home.css';
-import { debounce, loadEntry, makeSearcher, sendMessage } from '../base';
+import { Word, debounce, loadEntry, makeSearcher, sendMessage } from '../base';
 import { A } from '@solidjs/router';
 import poptip from 'poptip';
 import { appConfig } from '../state';
-
-interface Word {
-    id: number;
-    name: string;
-    dict: string;
-}
 
 const Home: Component = () => {
     const [keyword, setKeyword] = createSignal('');
