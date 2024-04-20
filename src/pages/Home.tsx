@@ -99,10 +99,17 @@ const Home: Component = () => {
     return (
         <div class="d-flex flex-column position-fixed top-0 bottom-0 start-0 end-0">
             <header class="flex-shrink-0 p-2 bg-light-subtle d-flex align-items-center">
-                <A href="/settings" class="btn btn-light me-2">
-                    <i class="bi bi-gear-wide-connected"></i>
+                <A href="/words" class="btn btn-light me-2">
+                    <i class="bi bi-star-fill"></i>
                 </A>
                 <div class="flex-grow-1 position-relative">
+                    <button
+                        class="btn me-2 toggle-words"
+                        classList={{ 'opacity-25': !showWords() }}
+                        onClick={() => setShowWords(!showWords())}
+                    >
+                        <i class="bi bi-layout-sidebar-inset"></i>
+                    </button>
                     <input
                         type="text"
                         class="form-control form-control text-center bg-light-subtle keyword"
@@ -138,14 +145,14 @@ const Home: Component = () => {
                         }}
                     />
                     <button
-                        class="btn position-absolute top-0 end-0"
+                        class="btn position-absolute top-0 end-0 kbd-shortcut"
                         onClick={showShortcut}
                     >
                         <i class="bi bi-keyboard-fill"></i>
                     </button>
                 </div>
-                <A href="/words" class="btn btn-light ms-2">
-                    <i class="bi bi-star-fill"></i>
+                <A href="/settings" class="btn btn-light ms-2">
+                    <i class="bi bi-gear-wide-connected"></i>
                 </A>
             </header>
             <div class="flex-grow-1 search-result">
@@ -183,18 +190,8 @@ const Home: Component = () => {
                         )}
                     </For>
                 </ul>
-                <div class="search-details">
-                    <div class="details-header">
-                        <button class="btn" onClick={() => setShowWords(true)}>
-                            <i class="bi bi-list"></i>
-                        </button>
-                    </div>
-                    <section
-                        class="details-wrapper"
-                        onClick={() => setShowWords(false)}
-                    >
-                        <iframe src="" ref={iframe!}></iframe>
-                    </section>
+                <div class="search-details" onClick={() => setShowWords(false)}>
+                    <iframe src="" ref={iframe!}></iframe>
                 </div>
             </div>
         </div>

@@ -16,6 +16,9 @@ const BackPage: ParentComponent<BackPageProps> = (props) => {
                 <h4 class="mb-0 flex-grow-1 d-flex justify-content-center align-items-center">
                     {props.title}
                 </h4>
+                <button class="btn invisible" disabled>
+                    <i class="bi bi-arrow-left"></i>
+                </button>
             </header>
             <div class="flex-grow-1 overflow-y-auto">{props.children}</div>
         </div>
