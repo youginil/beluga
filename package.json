@@ -9,7 +9,7 @@
     },
     "dependencies": {
         "@solidjs/router": "^0.13.2",
-        "@tauri-apps/api": "^1.5.3",
+        "@tauri-apps/api": "^1.5.4",
         "bootstrap": "^5.3.3",
         "bootstrap-icons": "^1.11.3",
         "poptip": "^0.1.4",
@@ -20,7 +20,7 @@
         "@types/node": "^20.12.7",
         "sharp": "^0.33.3",
         "typescript": "^5.4.5",
-        "vite": "^5.2.9",
+        "vite": "^5.2.10",
         "vite-plugin-solid": "^2.10.2"
     }
 }
