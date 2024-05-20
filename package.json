@@ -9,16 +9,16 @@
     },
     "dependencies": {
         "@solidjs/router": "^0.13.3",
-        "@tauri-apps/api": "^1.5.5",
+        "@tauri-apps/api": "^1.5.6",
         "bootstrap": "^5.3.3",
         "bootstrap-icons": "^1.11.3",
         "poptip": "^0.1.4",
         "solid-js": "^1.8.17"
     },
     "devDependencies": {
-        "@tauri-apps/cli": "^1.5.13",
-        "@types/node": "^20.12.11",
-        "sharp": "^0.33.3",
+        "@tauri-apps/cli": "^1.5.14",
+        "@types/node": "^20.12.12",
+        "sharp": "^0.33.4",
         "typescript": "^5.4.5",
         "vite": "^5.2.11",
         "vite-plugin-solid": "^2.10.2"
