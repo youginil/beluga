@@ -9,7 +9,9 @@ jobs:
     permissions:
       contents: write
     strategy:
-      fail-fast: false
+      fail-fast: true
+      # avoid generating multiple releases
+      max-parallel: 1
       matrix:
         settings:
           - platform: 'macos-latest'
