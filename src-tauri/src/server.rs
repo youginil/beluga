@@ -125,7 +125,7 @@ async fn get_entry(State(state): State<AppState>, params: Query<EntryQuery>) -> 
                 dict_css, dict_js, js, content
             );
             (
-                AppendHeaders([(SET_COOKIE, format!("dict_id={}", params.dict_id))]),
+                AppendHeaders([(SET_COOKIE, format!("{}={}; SameSite=None; Secure", DICT_COOKIE_NAME, params.dict_id))]),
                 Html(html),
             )
                 .into_response()
