@@ -69,3 +69,4 @@ jobs:
           owner: "youginil"
           repo: "beluga-project"
           releaseCommitish: "main"
+          args: ${{ matrix.settings.args }}
