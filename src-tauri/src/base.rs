@@ -2,7 +2,7 @@ use anyhow::Result;
 use serde::Serialize;
 use std::path::PathBuf;
 use std::{collections::HashMap, fs, path::Path, sync::Arc};
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tracing::{info, warn};
 
 use tokio::sync::{Mutex, RwLock};
@@ -125,13 +125,9 @@ impl AppState {
 
 pub fn get_resource_directory(ah: AppHandle) -> PathBuf {
     #[cfg(debug_assertions)]
-    let dir = ah
-        .path_resolver()
-        .resource_dir()
-        .unwrap()
-        .join("../../resources");
+    let dir = ah.path().resource_dir().unwrap().join("../../resources");
     #[cfg(not(debug_assertions))]
-    let dir = ah.path_resolver().resolve_resource("resources").unwrap();
+    let dir = ah.path().resource_dir().unwrap();
     dir
 }
 

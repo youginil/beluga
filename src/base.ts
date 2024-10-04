@@ -1,4 +1,4 @@
-import { tauri } from '@tauri-apps/api';
+import { core } from '@tauri-apps/api';
 import poptip from 'poptip';
 import { batch, createMemo, createSignal } from 'solid-js';
 import { appConfig, serverPort } from './state';
@@ -9,10 +9,9 @@ export function sendMessage<K extends keyof IpcMessage>(
     req: IpcMessage[K]['req']
 ): Promise<IpcMessage[K]['res']> {
     return new Promise((resolve, reject) => {
-        tauri
-            .invoke<IpcMessage[K]['res']>(channel, {
-                req,
-            })
+        core.invoke<IpcMessage[K]['res']>(channel, {
+            req,
+        })
             .then((res) => {
                 // console.log('IPC', channel, req, res);
                 resolve(res);

@@ -1,9 +1,10 @@
 import { Component, For } from 'solid-js';
 import { appConfig, setAppConfig } from '../state';
-import { dialog, shell } from '@tauri-apps/api';
 import { sendMessage } from '../base';
 import poptip from 'poptip';
 import BackPage from '../components/BackPage';
+import * as dialog from '@tauri-apps/plugin-dialog';
+import * as shell from '@tauri-apps/plugin-shell';
 
 const Settings: Component = () => {
     async function openDictDir() {

@@ -1,64 +1,51 @@
 {
-    "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+    "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
     "build": {
         "beforeBuildCommand": "npm run build",
         "beforeDevCommand": "npm run dev",
-        "devPath": "http://localhost:3100",
-        "distDir": "../dist"
+        "frontendDist": "../dist",
+        "devUrl": "http://localhost:3100"
     },
-    "package": {
-        "productName": "Beluga",
-        "version": "0.3.4"
-    },
-    "tauri": {
-        "allowlist": {
-            "all": false,
-            "dialog": {
-                "all": true
-            },
-            "shell": {
-                "all": true
-            }
+    "bundle": {
+        "active": true,
+        "category": "Education",
+        "copyright": "",
+        "targets": "all",
+        "externalBin": [],
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ],
+        "windows": {
+            "certificateThumbprint": null,
+            "digestAlgorithm": "sha256",
+            "timestampUrl": ""
         },
-        "bundle": {
-            "active": true,
-            "category": "Education",
-            "copyright": "",
+        "longDescription": "",
+        "macOS": {
+            "entitlements": null,
+            "exceptionDomain": "",
+            "frameworks": [],
+            "providerShortName": null,
+            "signingIdentity": null
+        },
+        "resources": ["./resources/entry.js"],
+        "shortDescription": "",
+        "linux": {
             "deb": {
                 "depends": []
-            },
-            "externalBin": [],
-            "icon": [
-                "icons/32x32.png",
-                "icons/128x128.png",
-                "icons/128x128@2x.png",
-                "icons/icon.icns",
-                "icons/icon.ico"
-            ],
-            "identifier": "com.youginil.beluga",
-            "longDescription": "",
-            "macOS": {
-                "entitlements": null,
-                "exceptionDomain": "",
-                "frameworks": [],
-                "providerShortName": null,
-                "signingIdentity": null
-            },
-            "resources": ["./resources/entry.js"],
-            "shortDescription": "",
-            "targets": "all",
-            "windows": {
-                "certificateThumbprint": null,
-                "digestAlgorithm": "sha256",
-                "timestampUrl": ""
             }
-        },
-        "security": {
-            "csp": null
-        },
-        "updater": {
-            "active": false
-        },
+        }
+    },
+    "productName": "Beluga",
+    "mainBinaryName": "Beluga",
+    "version": "0.3.4",
+    "identifier": "com.youginil.beluga",
+    "plugins": {},
+    "app": {
         "windows": [
             {
                 "fullscreen": false,
@@ -68,9 +55,12 @@
                 "width": 900
             }
         ],
-        "systemTray": {
+        "trayIcon": {
             "iconPath": "../public/beluga.png",
             "iconAsTemplate": true
+        },
+        "security": {
+            "csp": null
         }
     }
 }

@@ -14,7 +14,7 @@ use crate::base::AppState;
 #[instrument(skip(ah))]
 #[command]
 pub fn open_devtools(ah: AppHandle) -> Result<()> {
-    if let Some(v) = ah.get_window("main") {
+    if let Some(v) = ah.get_webview_window("main") {
         v.open_devtools();
     }
     Ok(())

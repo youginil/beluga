@@ -1,6 +1,6 @@
 use anyhow::Result;
 use std::{fs, path::Path};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter};
 use tracing::{error, instrument};
 
 use serde::{Deserialize, Serialize};
@@ -130,7 +130,7 @@ impl Settings {
 
     #[instrument(skip_all)]
     pub fn notify_changed(&self, ah: AppHandle) {
-        if let Err(e) = ah.emit_all("settings_changed", self.config.clone()) {
+        if let Err(e) = ah.emit("settings_changed", self.config.clone()) {
             error!("fail to notify settings_changed. {}", e);
         }
     }
