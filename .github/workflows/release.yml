@@ -26,7 +26,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ssh-key: ${{ secrets.SSH_KEY }}
+          # ssh-key: ${{ secrets.SSH_KEY }}
           submodules: "recursive"
 
       - name: install Rust stable
@@ -68,7 +68,7 @@ jobs:
           releaseBody: "update available"
           releaseDraft: true
           prerelease: false
-          owner: "youginil"
-          repo: "beluga"
+          # owner: "youginil"
+          # repo: "beluga"
           releaseCommitish: "main"
           args: ${{ matrix.settings.args }}
