@@ -24,8 +24,8 @@ anyhow = "1.0.89"
 axum = "0.7.7"
 axum-extra = { version = "0.9.4", features = ["cookie"] }
 mime_guess = "2.0.5"
-sqlx = { version = "0.7.4", features = ["runtime-tokio", "sqlite"] }
-libsqlite3-sys = { version = "0.27.0", features = ["bundled"] }
+sqlx = { version = "0.8.1", features = ["runtime-tokio", "sqlite"] }
+libsqlite3-sys = { version = "0.30.1", features = ["bundled"] }
 beluga-core = { path = "../beluga-core" }
 tauri-plugin-dialog = "2.0.1"
 tauri-plugin-shell = "2.0.1"
