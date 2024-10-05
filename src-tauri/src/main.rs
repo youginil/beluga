@@ -8,7 +8,6 @@ use server::start_server;
 use tauri::{
     generate_handler,
     menu::{Menu, MenuItem},
-    tray::TrayIconBuilder,
     Manager, WebviewWindowBuilder,
 };
 
@@ -75,36 +74,34 @@ async fn main() {
                 .expect("fail to create quit menu item");
             let menu = Menu::with_items(app, &[&main_menu_item, &quit_menu_item])
                 .expect("fail to create menu");
-            TrayIconBuilder::new()
-                .menu(&menu)
-                .on_menu_event(|app, event| match event.id.as_ref() {
-                    "main" => {
-                        if let Some(win) = app.get_webview_window("main") {
-                            win.set_focus().expect("fail to focus window");
-                        } else {
-                            WebviewWindowBuilder::from_config(
-                                app,
-                                &app.config()
-                                    .app
-                                    .windows
-                                    .get(0)
-                                    .expect("no window in config")
-                                    .clone(),
-                            )
-                            .unwrap()
-                            .build()
-                            .expect("fail to create main window")
-                            .show()
-                            .expect("fail to show main window");
-                        };
-                    }
-                    "quit" => {
-                        app.exit(0);
-                    }
-                    _ => {}
-                })
-                .build(app)
-                .expect("fail to build tray");
+            let tray = app.tray_by_id("main").expect("no tray setting");
+            tray.set_menu(Some(menu)).expect("fail to set menu");
+            tray.on_menu_event(|app, event| match event.id.as_ref() {
+                "main" => {
+                    if let Some(win) = app.get_webview_window("main") {
+                        win.set_focus().expect("fail to focus window");
+                    } else {
+                        WebviewWindowBuilder::from_config(
+                            app,
+                            &app.config()
+                                .app
+                                .windows
+                                .get(0)
+                                .expect("no window in config")
+                                .clone(),
+                        )
+                        .unwrap()
+                        .build()
+                        .expect("fail to create main window")
+                        .show()
+                        .expect("fail to show main window");
+                    };
+                }
+                "quit" => {
+                    std::process::exit(0);
+                }
+                _ => {}
+            });
 
             let config_dir = app.path().app_config_dir().unwrap();
             let data_dir = app.path().app_data_dir().unwrap();
