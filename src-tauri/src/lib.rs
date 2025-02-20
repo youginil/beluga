@@ -5,7 +5,7 @@ use std::{collections::HashMap, fs, io, sync::Arc};
 
 use beluga_core::dictionary::NodeCache;
 use server::start_server;
-use tauri::{generate_handler, Manager};
+use tauri::{generate_handler, Manager, WindowEvent};
 #[cfg(desktop)]
 use tauri::{
     menu::{Menu, MenuItem},
@@ -98,6 +98,9 @@ pub async fn run() {
                             .expect("fail to create main window")
                             .show()
                             .expect("fail to show main window");
+
+                            #[cfg(target_os = "macos")]
+                            let _ = app.set_activation_policy(tauri::ActivationPolicy::Regular);
                         };
                     }
                     "quit" => {
@@ -144,6 +147,20 @@ pub async fn run() {
             });
 
             Ok(())
+        })
+        .on_window_event(|window, event| match event {
+            WindowEvent::Destroyed => {
+                #[cfg(target_os = "macos")]
+                {
+                    let ah = window.app_handle();
+                    if ah.webview_windows().is_empty() {
+                        let _ = ah.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                    }
+                }
+            }
+            _ => {
+                //
+            }
         })
         .invoke_handler(generate_handler![
             open_devtools,

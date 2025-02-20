@@ -41,7 +41,7 @@ jobs:
           workspaces: "./src-tauri -> target"
 
       - name: pnpm installation
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: 8
 
