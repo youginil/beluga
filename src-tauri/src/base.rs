@@ -173,9 +173,9 @@ pub fn recognize_text(engine: &OcrEngine, w: u32, h: u32) -> String {
                 let x2 = std::cmp::min(mx + mw, x + w / 2) as u32;
                 let y2 = std::cmp::min(my + mh, y + h / 2) as u32;
                 let img2 = DynamicImage::from(img).crop(x1, y1, x2 - x1, y2 - y1);
-                let mut file = std::fs::File::create("/Users/jiaju/Downloads/a.png").unwrap();
-                img2.write_to(&mut file, xcap::image::ImageFormat::Png)
-                    .unwrap();
+                // let mut file = std::fs::File::create("/Users/jiaju/Downloads/a.png").unwrap();
+                // img2.write_to(&mut file, xcap::image::ImageFormat::Png)
+                //     .unwrap();
                 let img3 = match ImageSource::from_bytes(img2.as_bytes(), img2.dimensions()) {
                     Ok(v) => v,
                     Err(e) => {
