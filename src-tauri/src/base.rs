@@ -1,9 +1,13 @@
 use anyhow::Result;
+use mouse_position::mouse_position::Mouse;
+use ocrs::{ImageSource, OcrEngine};
+use rten_imageproc::{PointF, RotatedRect};
 use serde::Serialize;
 use std::path::PathBuf;
 use std::{collections::HashMap, fs, path::Path, sync::Arc};
 use tauri::{AppHandle, Manager};
-use tracing::{info, warn};
+use tracing::{debug, error, info, warn};
+use xcap::image::{DynamicImage, GenericImageView};
 
 use tokio::sync::{Mutex, RwLock};
 
@@ -22,6 +26,7 @@ pub struct AppState {
     pub cache: Arc<RwLock<NodeCache>>,
     pub settings: Arc<RwLock<Settings>>,
     pub db: Arc<Mutex<Database>>,
+    pub engine: Arc<Mutex<OcrEngine>>,
 }
 
 impl AppState {
@@ -30,6 +35,7 @@ impl AppState {
         dicts: Arc<RwLock<HashMap<u32, Arc<Mutex<Dictionary>>>>>,
         cache: Arc<RwLock<NodeCache>>,
         db: Arc<Mutex<Database>>,
+        engine: Arc<Mutex<OcrEngine>>,
     ) -> Self {
         Self {
             last_dict_id: Arc::new(Mutex::new(1)),
@@ -38,6 +44,7 @@ impl AppState {
             cache,
             settings,
             db,
+            engine,
         }
     }
 
@@ -127,7 +134,7 @@ pub fn get_resource_directory(ah: AppHandle) -> PathBuf {
     #[cfg(debug_assertions)]
     let dir = ah.path().resource_dir().unwrap().join("../../resources");
     #[cfg(not(debug_assertions))]
-    let dir = ah.path().resource_dir().unwrap();
+    let dir = ah.path().resource_dir().unwrap().join("resources");
     dir
 }
 
@@ -138,4 +145,73 @@ pub struct Pagination<T> {
     pub pages: u32,
     pub total: u32,
     pub list: Vec<T>,
+}
+
+pub fn recognize_text(engine: &OcrEngine, w: u32, h: u32) -> String {
+    let w = w as i32;
+    let h = h as i32;
+    let (x, y) = match Mouse::get_mouse_position() {
+        Mouse::Position { x, y } => (x, y),
+        Mouse::Error => return "".to_string(),
+    };
+    debug!("Mouse position: {} {} {} {}", x, y, w, h);
+    let monitors = if let Ok(v) = xcap::Monitor::all() {
+        v
+    } else {
+        return "".to_string();
+    };
+    for monitor in monitors {
+        let mx = monitor.x();
+        let my = monitor.y();
+        let mw = monitor.width() as i32;
+        let mh = monitor.height() as i32;
+        debug!("Screen: {} {}, {} {}", mx, my, mw, mh);
+        if x >= mx && x <= mx + mw && y >= my && y <= my + mh {
+            if let Ok(img) = monitor.capture_image() {
+                let x1 = std::cmp::max(x - w / 2, 0) as u32;
+                let y1 = std::cmp::max(y - h / 2, 0) as u32;
+                let x2 = std::cmp::min(mx + mw, x + w / 2) as u32;
+                let y2 = std::cmp::min(my + mh, y + h / 2) as u32;
+                let img2 = DynamicImage::from(img).crop(x1, y1, x2 - x1, y2 - y1);
+                let mut file = std::fs::File::create("/Users/jiaju/Downloads/a.png").unwrap();
+                img2.write_to(&mut file, xcap::image::ImageFormat::Png)
+                    .unwrap();
+                let img3 = match ImageSource::from_bytes(img2.as_bytes(), img2.dimensions()) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        error!("fail to new image source from bytes. {}", e);
+                        return "".to_string();
+                    }
+                };
+                let ocr_input = match engine.prepare_input(img3) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        error!("fail to prepare input. {}", e);
+                        return "".to_string();
+                    }
+                };
+                let word_rects = match engine.detect_words(&ocr_input) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        error!("fail to detect words. {}", e);
+                        return "".to_string();
+                    }
+                };
+                let words: Vec<Vec<RotatedRect>> = word_rects.iter().map(|x| vec![*x]).collect();
+                if let Ok(wds) = engine.recognize_text(&ocr_input, &words) {
+                    let x0 = x as f32 - x1 as f32;
+                    let y0 = y as f32 - y1 as f32;
+                    for (i, wd) in wds.iter().enumerate() {
+                        if let Some(v) = wd {
+                            debug!("{:?} {}", word_rects[i], v);
+                            if word_rects[i].contains(PointF::from_yx(y0, x0)) {
+                                return format!("{}", v);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    "".to_string()
 }

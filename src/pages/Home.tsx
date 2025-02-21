@@ -8,7 +8,7 @@ import {
 } from 'solid-js';
 import './Home.css';
 import { Word, debounce, loadEntry, makeSearcher, sendMessage } from '../base';
-import { A } from '@solidjs/router';
+import { A, useSearchParams } from '@solidjs/router';
 import poptip from 'poptip';
 import { appConfig } from '../state';
 
@@ -16,7 +16,29 @@ const Home: Component = () => {
     const [keyword, setKeyword] = createSignal('');
     const [showWords, setShowWords] = createSignal(false);
 
-    let iframe: HTMLIFrameElement;
+    let kwInput!: HTMLInputElement;
+    const [searchParams, _] = useSearchParams();
+    function searchByUrlParam(keyword?: string) {
+        const kw = keyword ?? decodeURIComponent(searchParams.kw as string);
+        setTimeout(() => {
+            kwInput.value = kw;
+            kwInput.dispatchEvent(new Event('input', { bubbles: true }));
+            kwInput.focus();
+        }, 100);
+    }
+    if ('__OCR_TEXT__' in window && window.__OCR_TEXT__) {
+        searchByUrlParam(window.__OCR_TEXT__ as string);
+        delete window.__OCR_TEXT__;
+    } else if (searchParams.kw) {
+        searchByUrlParam();
+    }
+    createEffect(() => {
+        if (searchParams.kw) {
+            searchByUrlParam();
+        }
+    });
+
+    let iframe!: HTMLIFrameElement;
 
     const { search, selectedWord, setSelectedWord, searchResult } =
         makeSearcher(false, appConfig.prefix_limit, appConfig.phrase_limit);
@@ -37,7 +59,7 @@ const Home: Component = () => {
         search(keyword());
     }, 500);
 
-    let wordsEl: HTMLUListElement;
+    let wordsEl!: HTMLUListElement;
 
     function selectResult(wd: Word) {
         batch(() => {
@@ -115,6 +137,7 @@ const Home: Component = () => {
                         class="form-control form-control text-center bg-light-subtle keyword"
                         placeholder="Search..."
                         value={keyword()}
+                        ref={kwInput}
                         onInput={(e) => {
                             setKeyword(e.target.value);
                             searchWord();

@@ -7,12 +7,11 @@ interface Configuration {
     dict_dir: string;
     dicts: DictItem[];
     cache_size: number;
-    key_main: string;
-    key_ocr: string;
     win_width: number;
     win_height: number;
     ocr_width: number;
     ocr_height: number;
+    ocr_shortcut: string;
     prefix_limit: number;
     phrase_limit: number;
     dev_mode: boolean;

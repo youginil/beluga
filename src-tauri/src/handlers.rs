@@ -80,6 +80,9 @@ pub struct SettingsParams {
     pub cache_size: Option<u32>,
     pub prefix_limit: Option<u32>,
     pub phrase_limit: Option<u32>,
+    pub ocr_width: Option<u32>,
+    pub ocr_height: Option<u32>,
+    pub ocr_shortcut: Option<String>,
     pub dev_mode: Option<bool>,
 }
 
@@ -107,6 +110,15 @@ pub async fn set_settings(
     }
     if let Some(v) = req.phrase_limit {
         settings.config.phrase_limit = v;
+    }
+    if let Some(v) = req.ocr_width {
+        settings.config.ocr_width = v;
+    }
+    if let Some(v) = req.ocr_height {
+        settings.config.ocr_height = v;
+    }
+    if let Some(v) = req.ocr_shortcut {
+        settings.config.ocr_shortcut = v;
     }
     if let Some(v) = req.dev_mode {
         settings.config.dev_mode = v;

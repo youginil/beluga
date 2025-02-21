@@ -55,6 +55,11 @@ jobs:
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
         run: pnpm install # Change this to npm, yarn or pnpm.
 
+      - name: Download OCR models
+        run: |
+          curl https://ocrs-models.s3-accelerate.amazonaws.com/text-detection.rten -o src-tauri/resources/text-detection.rten
+          curl https://ocrs-models.s3-accelerate.amazonaws.com/text-recognition.rten -o src-tauri/resources/text-recognition.rten
+
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
 

@@ -32,7 +32,11 @@
             "providerShortName": null,
             "signingIdentity": null
         },
-        "resources": ["./resources/entry.js"],
+        "resources": [
+            "./resources/entry.js",
+            "./resources/text-detection.rten",
+            "./resources/text-recognition.rten"
+        ],
         "shortDescription": "",
         "linux": {
             "deb": {
@@ -42,7 +46,7 @@
     },
     "productName": "Beluga",
     "mainBinaryName": "Beluga",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "identifier": "com.youginil.beluga",
     "plugins": {},
     "app": {

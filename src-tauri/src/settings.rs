@@ -20,20 +20,16 @@ fn default_cache_size() -> u32 {
     100
 }
 
-fn default_key_main() -> String {
-    "Option+Space".to_string()
-}
-
-fn default_key_ocr() -> String {
-    "Option+X".to_string()
-}
-
 fn default_win_width() -> u32 {
     800
 }
 
 fn default_win_height() -> u32 {
     650
+}
+
+fn default_ocr_shortcut() -> String {
+    "Alt+X".to_string()
 }
 
 fn default_ocr_width() -> u32 {
@@ -71,14 +67,12 @@ pub struct Configuration {
     pub dicts: Vec<DictItem>,
     #[serde(default = "default_cache_size")]
     pub cache_size: u32,
-    #[serde(default = "default_key_main")]
-    pub key_main: String,
-    #[serde(default = "default_key_ocr")]
-    pub key_ocr: String,
     #[serde(default = "default_win_width")]
     pub win_width: u32,
     #[serde(default = "default_win_height")]
     pub win_height: u32,
+    #[serde(default = "default_ocr_shortcut")]
+    pub ocr_shortcut: String,
     #[serde(default = "default_ocr_width")]
     pub ocr_width: u32,
     #[serde(default = "default_ocr_height")]

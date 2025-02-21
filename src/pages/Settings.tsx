@@ -5,6 +5,7 @@ import poptip from 'poptip';
 import BackPage from '../components/BackPage';
 import * as dialog from '@tauri-apps/plugin-dialog';
 import * as shell from '@tauri-apps/plugin-shell';
+import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 
 const Settings: Component = () => {
     async function openDictDir() {
@@ -68,6 +69,25 @@ const Settings: Component = () => {
             n = 0;
         }
         await sendMessage('set_settings', { phrase_limit: n });
+        poptip.info('Settings saved');
+    }
+
+    async function changeOCRWidth(n: number) {
+        await sendMessage('set_settings', { ocr_width: n });
+        poptip.info('Settings saved');
+    }
+
+    async function changeOCRHeight(n: number) {
+        await sendMessage('set_settings', { ocr_height: n });
+        poptip.info('Settings saved');
+    }
+
+    async function changeOCRShortcut(shortcut: string) {
+        await unregister(appConfig.ocr_shortcut);
+        await register(shortcut, () => {
+            //
+        });
+        await sendMessage('set_settings', { ocr_shortcut: shortcut });
         poptip.info('Settings saved');
     }
 
@@ -190,6 +210,44 @@ const Settings: Component = () => {
                             value={appConfig.phrase_limit}
                             onChange={(e) => {
                                 changePhraseNumber(+e.target.value);
+                            }}
+                        />
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6 class="form-label">OCR</h6>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Width</span>
+                        <input
+                            type="number"
+                            class="form-control"
+                            value={appConfig.ocr_width}
+                            min={1}
+                            onChange={(e) => {
+                                changeOCRWidth(+e.target.value);
+                            }}
+                        />
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Height</span>
+                        <input
+                            type="number"
+                            class="form-control"
+                            value={appConfig.ocr_height}
+                            min={1}
+                            onChange={(e) => {
+                                changeOCRHeight(+e.target.value);
+                            }}
+                        />
+                    </div>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text">Shortcut</span>
+                        <input
+                            type="text"
+                            class="form-control"
+                            value={appConfig.ocr_shortcut}
+                            onChange={(e) => {
+                                changeOCRShortcut(e.target.value);
                             }}
                         />
                     </div>

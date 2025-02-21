@@ -33,6 +33,16 @@ beluga-core = { path = "../beluga-core" }
 tauri-plugin-dialog = "2"
 tauri-plugin-shell = "2"
 dirs = "6.0"
+xcap = "0.3"
+mouse_position = "0.1"
+ocrs = "0.10"
+rayon = "1.10"
+rten = "0.16"
+rten-tensor = "0.16"
+rten-imageproc = "0.16"
+
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-global-shortcut = "2"
 
 [features]
 custom-protocol = [ "tauri/custom-protocol" ]

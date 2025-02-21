@@ -1,11 +1,14 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{collections::HashMap, fs, io, sync::Arc};
+use std::{collections::HashMap, fs, io, str::FromStr, sync::Arc};
 
+use base::{get_resource_directory, recognize_text};
 use beluga_core::dictionary::NodeCache;
+use ocrs::{OcrEngine, OcrEngineParams};
+use rten::Model;
 use server::start_server;
-use tauri::{generate_handler, Manager, WindowEvent};
+use tauri::{generate_handler, Emitter, Manager, WindowEvent};
 #[cfg(desktop)]
 use tauri::{
     menu::{Menu, MenuItem},
@@ -16,8 +19,9 @@ use handlers::{
     add_word, delete_words, get_server_port, get_settings, get_word_list, open_devtools,
     reload_dicts, resize_cache, search, set_settings,
 };
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 use tokio::sync::{Mutex, RwLock};
-use tracing::debug;
+use tracing::{debug, error, info};
 use tracing_subscriber::fmt::format::FmtSpan;
 
 use crate::{base::AppState, database::Database, settings::Settings};
@@ -71,6 +75,7 @@ pub async fn run() {
         .setup(|app| {
             #[cfg(desktop)]
             {
+                info!("Init tray");
                 let main_menu_item = MenuItem::with_id(app, "main", "Beluga", true, None::<&str>)
                     .expect("fail to create main menu item");
                 let quit_menu_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)
@@ -113,6 +118,7 @@ pub async fn run() {
             let config_dir = app.path().app_config_dir().unwrap();
             let data_dir = app.path().app_data_dir().unwrap();
             debug!("{:?}, {:?}", config_dir, data_dir);
+            info!("Init settings");
             let settings =
                 match Settings::init(config_dir.to_str().unwrap(), data_dir.to_str().unwrap()) {
                     Ok(v) => v,
@@ -125,6 +131,7 @@ pub async fn run() {
             let settings = Arc::new(RwLock::new(settings));
             let dicts = Arc::new(RwLock::new(HashMap::new()));
 
+            info!("Start server");
             let settings2 = settings.clone();
             let dicts2 = dicts.clone();
             let cache2 = cache.clone();
@@ -133,9 +140,36 @@ pub async fn run() {
                 start_server(settings2, dicts2, cache2, ah2).await;
             });
 
-            let state = AppState::new(settings, dicts, cache, db);
+            info!("Load OCR engine");
+            let ah = app.app_handle();
+            let resource_dir = get_resource_directory(ah.clone());
+            let detection_model_path = resource_dir.join("text-detection.rten");
+            info!("{:?}", detection_model_path);
+            let rec_model_path = resource_dir.join("text-recognition.rten");
+            info!("{:?}", rec_model_path);
+            let detection_model =
+                Model::load_file(detection_model_path).expect("fail to load detection model");
+            info!("1");
+            let recognition_model =
+                Model::load_file(rec_model_path).expect("fail to load recognition model");
+            info!("2");
+            let engine = match OcrEngine::new(OcrEngineParams {
+                detection_model: Some(detection_model),
+                recognition_model: Some(recognition_model),
+                ..Default::default()
+            }) {
+                Ok(v) => v,
+                Err(e) => {
+                    panic!("fail to load OCR engine. {}", e);
+                }
+            };
+            info!("3");
+            let engine = Arc::new(Mutex::new(engine));
+
+            let state = AppState::new(settings, dicts, cache, db, engine);
             app.manage(state);
 
+            info!("Load dictionaries");
             let ah = app.app_handle().clone();
             tokio::spawn(async move {
                 let state = ah.state::<AppState>();
@@ -145,6 +179,87 @@ pub async fn run() {
                 let settings_lock = state.settings.read().await;
                 settings_lock.notify_changed(ah.clone());
             });
+
+            #[cfg(desktop)]
+            {
+                info!("Register global shortcuts");
+                app.handle()
+                    .plugin(
+                        tauri_plugin_global_shortcut::Builder::new()
+                            .with_handler(move |ah, shortcut, event| {
+                                debug!("{:?}", shortcut);
+                                let ah = ah.clone();
+                                let sc = *shortcut;
+                                tokio::spawn(async move {
+                                    let state = ah.state::<AppState>();
+                                    let settings_lock = state.settings.read().await;
+                                    if let Ok(sc_ocr) =
+                                        Shortcut::from_str(&settings_lock.config.ocr_shortcut)
+                                    {
+                                        if sc == sc_ocr {
+                                            match event.state() {
+                                                ShortcutState::Pressed => {
+                                                    let engine = state.engine.lock().await;
+                                                    let ocr_width = settings_lock.config.ocr_width;
+                                                    let ocr_height =
+                                                        settings_lock.config.ocr_height;
+                                                    let text = recognize_text(
+                                                        &engine, ocr_width, ocr_height,
+                                                    );
+                                                    debug!("recognized text: {}", text);
+                                                    if let Some(win) = ah.get_webview_window("main")
+                                                    {
+                                                        let _ = win.set_focus();
+                                                        let _ = ah.emit("ocr_text", text);
+                                                    } else {
+                                                        let script = format!(
+                                                            "window.__OCR_TEXT__ = \"{}\"",
+                                                            text
+                                                        );
+                                                        WebviewWindowBuilder::from_config(
+                                                            &ah,
+                                                            &ah.config()
+                                                                .app
+                                                                .windows
+                                                                .get(0)
+                                                                .expect("no window in config")
+                                                                .clone(),
+                                                        )
+                                                        .expect("fail to build window from config")
+                                                        .initialization_script(&script)
+                                                        .build()
+                                                        .expect("fail to build window")
+                                                        .show()
+                                                        .expect("fail to show window");
+
+                                                        #[cfg(target_os = "macos")]
+                                                        let _ = ah.set_activation_policy(
+                                                            tauri::ActivationPolicy::Regular,
+                                                        );
+                                                    }
+                                                }
+                                                ShortcutState::Released => {}
+                                            }
+                                        }
+                                    };
+                                });
+                            })
+                            .build(),
+                    )
+                    .expect("fail to load tauri_plugin_global_shortcut");
+
+                let ah = app.app_handle().clone();
+                tokio::spawn(async move {
+                    let state = ah.state::<AppState>();
+                    let settings_lock = state.settings.read().await;
+                    debug!("{}", settings_lock.config.ocr_shortcut);
+                    if let Ok(v) = Shortcut::from_str(&settings_lock.config.ocr_shortcut) {
+                        if let Err(e) = ah.global_shortcut().register(v) {
+                            error!("fail to register ocr shortcut. {}", e);
+                        }
+                    }
+                });
+            }
 
             Ok(())
         })
