@@ -6,7 +6,6 @@ const App: ParentComponent = (props) => {
     const navigate = useNavigate();
 
     event.listen('ocr_text', ({ payload }) => {
-        console.log(payload);
         const kw = encodeURIComponent(payload as string);
         navigate(`/?kw=${kw}`, { replace: true });
     });
