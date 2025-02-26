@@ -43,6 +43,15 @@ const PopupWord: ParentComponent<PopupWordProps> = (props) => {
         }
     });
 
+    let dictListEl!: HTMLDivElement;
+    function onDictListScroll(e: WheelEvent) {
+        if (e.deltaX === 0 && e.deltaY !== 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            dictListEl.scrollBy({ left: e.deltaY });
+        }
+    }
+
     function close() {
         wrapperEl.addEventListener('transitionend', afterTransition);
         wrapperEl.classList.remove('show');
@@ -59,25 +68,33 @@ const PopupWord: ParentComponent<PopupWordProps> = (props) => {
                         <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
-                <div class="flex-shrink-0 px-2 pb-2">
-                    <select
-                        class="form-select"
-                        value={selectedWord()?.id}
-                        onChange={(e) => {
-                            const [wd] = searchResult.exact.filter(
-                                (item) => item.id === +e.target.value
-                            );
-                            setSelectedWord(wd);
-                        }}
+                <div
+                    class="flex-shrink-0 px-2 overflow-hidden"
+                    style="height: 40px"
+                >
+                    <div
+                        class="dict-list"
+                        ref={dictListEl}
+                        onWheel={onDictListScroll}
                     >
                         <For each={searchResult.exact}>
                             {(item) => (
-                                <option value={item.id}>{item.dict}</option>
+                                <span
+                                    class="dict-name"
+                                    classList={{
+                                        active: item.id === selectedWord()?.id,
+                                    }}
+                                    onClick={() => {
+                                        setSelectedWord(item);
+                                    }}
+                                >
+                                    {item.dict}
+                                </span>
                             )}
                         </For>
-                    </select>
+                    </div>
                 </div>
-                <div class="flex-grow-1">
+                <div class="flex-grow-1 pt-2">
                     <iframe src="" ref={iframe!}></iframe>
                 </div>
             </div>
