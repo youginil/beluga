@@ -8,8 +8,8 @@ interface PopupWordProps {
 }
 
 const PopupWord: ParentComponent<PopupWordProps> = (props) => {
-    let wrapperEl: HTMLDivElement;
-    let iframe: HTMLIFrameElement;
+    let wrapperEl!: HTMLDivElement;
+    let iframe!: HTMLIFrameElement;
 
     const { search, selectedWord, setSelectedWord, searchResult } =
         makeSearcher(true, 1, 0);

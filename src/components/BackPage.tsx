@@ -11,7 +11,7 @@ const BackPage: ParentComponent<BackPageProps> = (props) => {
         <div class="d-flex flex-column position-fixed top-0 bottom-0 start-0 end-0">
             <header class="flex-shrink-0 p-2 bg-light-subtle d-flex">
                 <A href={props.url ?? '/'} class="btn btn-light" end={true}>
-                    <i class="bi bi-arrow-left"></i>
+                    <i class="bi bi-arrow-left-circle"></i>
                 </A>
                 <h4 class="mb-0 flex-grow-1 d-flex justify-content-center align-items-center">
                     {props.title}

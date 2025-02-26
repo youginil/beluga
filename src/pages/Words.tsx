@@ -4,7 +4,7 @@ import { sendMessage } from '../base';
 import './Words.css';
 import PopupWord from '../components/PopupWord';
 
-const PageSizeOptions = [20, 50];
+const PageSizeOptions = [100, 200];
 const OrderOptions = [
     {
         name: 'Time',
@@ -43,10 +43,12 @@ const Words: Component = () => {
         }
     }
 
-    async function deleteWord(e: MouseEvent, id: number) {
+    async function deleteWord(e: MouseEvent, id: number, name: string) {
         e.stopPropagation();
-        await sendMessage('delete_words', [id]);
-        getWordList(pg().page);
+        if (confirm(`Delete "${name}"?`)) {
+            await sendMessage('delete_words', [id]);
+            getWordList(pg().page);
+        }
     }
 
     onMount(() => {
@@ -103,22 +105,23 @@ const Words: Component = () => {
                                 </div>
                             }
                         >
-                            <ul class="list-group word-list">
+                            <ul class="word-list">
                                 <For each={pg().list}>
                                     {(item) => (
-                                        <li
-                                            class="list-group-item d-flex justify-content-between align-items-center"
-                                            onClick={() => setWord(item.name)}
-                                        >
+                                        <li onClick={() => setWord(item.name)}>
                                             {item.name}
-                                            <button
-                                                class="btn btn-danger btn-sm"
+                                            <span
+                                                class="del-btn"
                                                 onClick={(e) =>
-                                                    deleteWord(e, item.id)
+                                                    deleteWord(
+                                                        e,
+                                                        item.id,
+                                                        item.name
+                                                    )
                                                 }
                                             >
-                                                <i class="bi bi-x-lg"></i>
-                                            </button>
+                                                <i class="bi bi-x"></i>
+                                            </span>
                                         </li>
                                     )}
                                 </For>
@@ -126,13 +129,13 @@ const Words: Component = () => {
                         </Show>
                     </div>
                     <div
-                        class="flex-shrink-0 d-flex align-items-center justify-content-end py-2"
+                        class="flex-shrink-0 d-flex align-items-center justify-content-between py-2"
                         classList={{ 'd-none': pg().pages <= 1 }}
                     >
                         <span class="me-2">
                             {pg().total} items, P<sub>{pg().page}</sub>
                         </span>
-                        <div class="btn-group flex-grow-1">
+                        <div class="btn-group">
                             <button
                                 class="btn btn-outline-success"
                                 onClick={() => getWordList(pg().page - 1)}
