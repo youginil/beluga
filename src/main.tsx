@@ -3,7 +3,7 @@ import { Router, Route } from '@solidjs/router';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'bootstrap/dist/css/bootstrap.css';
 import 'bootstrap/dist/js/bootstrap.esm.js';
-import 'poptip/style.css';
+import 'poptip/dist/poptip.css';
 import './main.css';
 
 import App from './App';

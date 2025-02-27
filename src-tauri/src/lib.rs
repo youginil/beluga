@@ -8,7 +8,7 @@ use beluga_core::dictionary::NodeCache;
 use ocrs::{OcrEngine, OcrEngineParams};
 use rten::Model;
 use server::start_server;
-use tauri::{generate_handler, Emitter, Manager, WindowEvent};
+use tauri::{generate_handler, tray::TrayIconBuilder, Emitter, Manager, WindowEvent};
 #[cfg(desktop)]
 use tauri::{
     menu::{Menu, MenuItem},
@@ -82,8 +82,11 @@ pub async fn run() {
                     .expect("fail to create quit menu item");
                 let menu = Menu::with_items(app, &[&main_menu_item, &quit_menu_item])
                     .expect("fail to create menu");
-                let tray = app.tray_by_id("main").expect("no tray setting");
-                tray.set_menu(Some(menu)).expect("fail to set menu");
+                let tray = TrayIconBuilder::new()
+                    .menu(&menu)
+                    .show_menu_on_left_click(true)
+                    .build(app)
+                    .expect("fail to load tray");
                 tray.on_menu_event(|app, event| match event.id.as_ref() {
                     "main" => {
                         if let Some(win) = app.get_webview_window("main") {
