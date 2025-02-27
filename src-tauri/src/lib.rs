@@ -8,7 +8,7 @@ use beluga_core::dictionary::NodeCache;
 use ocrs::{OcrEngine, OcrEngineParams};
 use rten::Model;
 use server::start_server;
-use tauri::{generate_handler, tray::TrayIconBuilder, Emitter, Manager, WindowEvent};
+use tauri::{generate_handler, Emitter, Manager, WindowEvent};
 #[cfg(desktop)]
 use tauri::{
     menu::{Menu, MenuItem},
