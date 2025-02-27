@@ -82,11 +82,8 @@ pub async fn run() {
                     .expect("fail to create quit menu item");
                 let menu = Menu::with_items(app, &[&main_menu_item, &quit_menu_item])
                     .expect("fail to create menu");
-                let tray = TrayIconBuilder::new()
-                    .menu(&menu)
-                    .show_menu_on_left_click(true)
-                    .build(app)
-                    .expect("fail to load tray");
+                let tray = app.tray_by_id("main").expect("no tray setting");
+                tray.set_menu(Some(menu)).expect("fail to set menu");
                 tray.on_menu_event(|app, event| match event.id.as_ref() {
                     "main" => {
                         if let Some(win) = app.get_webview_window("main") {
