@@ -480,9 +480,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.15"
+version = "1.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c736e259eea577f443d5c86c304f9f4ae0295c43f3ba05c21f1d66b5f06001af"
+checksum = "be714c154be609ec7f5dad223a33bf1482fff90472de28f7362806e6d4832b8c"
 dependencies = [
  "shlex",
 ]
@@ -4534,9 +4534,9 @@ dependencies = [
 
 [[package]]
 name = "tao"
-version = "0.32.3"
+version = "0.32.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d8f5e5fe19612f3dd187ac3928d48f5ad23d3edd9821806d05b0c3beb6537bd"
+checksum = "5c1d6eb33b66c3743251d936b1ee0a8b950dc0ae7854dbd60509e768a11be2bb"
 dependencies = [
  "bitflags 2.8.0",
  "core-foundation 0.10.0",

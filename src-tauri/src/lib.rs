@@ -87,7 +87,7 @@ pub async fn run() {
                 tray.on_menu_event(|app, event| match event.id.as_ref() {
                     "main" => {
                         if let Some(win) = app.get_webview_window("main") {
-                            win.set_focus().expect("fail to focus window");
+                            let _ = win.set_focus();
                         } else {
                             WebviewWindowBuilder::from_config(
                                 app,
@@ -144,15 +144,11 @@ pub async fn run() {
             let ah = app.app_handle();
             let resource_dir = get_resource_directory(ah.clone());
             let detection_model_path = resource_dir.join("text-detection.rten");
-            info!("{:?}", detection_model_path);
             let rec_model_path = resource_dir.join("text-recognition.rten");
-            info!("{:?}", rec_model_path);
             let detection_model =
                 Model::load_file(detection_model_path).expect("fail to load detection model");
-            info!("1");
             let recognition_model =
                 Model::load_file(rec_model_path).expect("fail to load recognition model");
-            info!("2");
             let engine = match OcrEngine::new(OcrEngineParams {
                 detection_model: Some(detection_model),
                 recognition_model: Some(recognition_model),
@@ -163,7 +159,6 @@ pub async fn run() {
                     panic!("fail to load OCR engine. {}", e);
                 }
             };
-            info!("3");
             let engine = Arc::new(Mutex::new(engine));
 
             let state = AppState::new(settings, dicts, cache, db, engine);
@@ -209,7 +204,9 @@ pub async fn run() {
                                                     debug!("recognized text: {}", text);
                                                     if let Some(win) = ah.get_webview_window("main")
                                                     {
-                                                        let _ = win.set_focus();
+                                                        if let Err(e) = win.set_focus() {
+                                                            error!("fail to focus window. {}", e);
+                                                        }
                                                         let _ = ah.emit("ocr_text", text);
                                                     } else {
                                                         let script = format!(
