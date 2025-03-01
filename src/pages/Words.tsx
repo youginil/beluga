@@ -3,6 +3,7 @@ import BackPage from '../components/BackPage';
 import { sendMessage } from '../base';
 import './Words.css';
 import PopupWord from '../components/PopupWord';
+import { ask } from '@tauri-apps/plugin-dialog';
 
 const PageSizeOptions = [100, 200];
 const OrderOptions = [
@@ -45,7 +46,8 @@ const Words: Component = () => {
 
     async function deleteWord(e: MouseEvent, id: number, name: string) {
         e.stopPropagation();
-        if (confirm(`Delete "${name}"?`)) {
+        const yes = await ask(`Delete "${name}"?`, { kind: 'warning' });
+        if (yes) {
             await sendMessage('delete_words', [id]);
             getWordList(pg().page);
         }
