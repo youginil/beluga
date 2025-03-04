@@ -47,6 +47,7 @@ impl Database {
     async fn upgrade(&mut self) {
         let mut tx = self.conn.begin().await.unwrap();
         let mut version = get_user_version(&mut *tx).await;
+        let init_version = version;
         if version == 0 {
             let sqls: Vec<String> = vec![
                 format!("DROP TABLE IF EXISTS {}", WORD_TABLE),
@@ -85,7 +86,9 @@ impl Database {
             }
             version = 2;
         }
-        set_user_version(&mut *tx, version).await;
+        if init_version != version {
+            set_user_version(&mut *tx, version).await;
+        }
         tx.commit().await.unwrap();
     }
 }

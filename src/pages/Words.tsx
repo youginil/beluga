@@ -84,31 +84,27 @@ const Words: Component = () => {
 
     let opsEl!: HTMLDivElement;
 
-    function handleClickWord(e: MouseEvent, word: WordModel) {
-        if (e.altKey) {
-            setOpWord(word);
-            opsEl.style.visibility = 'hidden';
-            opsEl.style.left = '0';
-            setTimeout(() => {
-                const x = e.clientX;
-                const y = e.clientY;
-                const w = window.innerWidth;
-                const h = window.innerHeight;
-                let left = x;
-                let top = y;
-                if (x > w - x) {
-                    left = x - opsEl.clientWidth;
-                }
-                if (y > h - y) {
-                    top = y - opsEl.clientHeight;
-                }
-                opsEl.style.left = `${left}px`;
-                opsEl.style.top = `${top}px`;
-                opsEl.style.visibility = 'visible';
-            }, 0);
-            return;
-        }
-        setWord(word.name);
+    function handleWordMenu(e: MouseEvent, word: WordModel) {
+        setOpWord(word);
+        opsEl.style.visibility = 'hidden';
+        opsEl.style.left = '0';
+        setTimeout(() => {
+            const x = e.clientX;
+            const y = e.clientY;
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            let left = x;
+            let top = y;
+            if (x > w - x) {
+                left = x - opsEl.clientWidth;
+            }
+            if (y > h - y) {
+                top = y - opsEl.clientHeight;
+            }
+            opsEl.style.left = `${left}px`;
+            opsEl.style.top = `${top}px`;
+            opsEl.style.visibility = 'visible';
+        }, 0);
     }
 
     function hideOpsEl() {
@@ -186,13 +182,13 @@ const Words: Component = () => {
                                                     item.familiar ===
                                                     Familiar.KnowWell,
                                             }}
-                                            onClick={(e) => {
+                                            onClick={() => setWord(item.name)}
+                                            onContextMenu={(e) => {
                                                 e.stopPropagation();
-                                                e.stopImmediatePropagation();
-                                                handleClickWord(e, item);
+                                                e.preventDefault();
+                                                handleWordMenu(e, item);
                                                 return false;
                                             }}
-                                            title="<ALT> + Click"
                                         >
                                             {item.name}
                                         </li>

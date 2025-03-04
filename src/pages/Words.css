@@ -13,6 +13,10 @@
     background-color: #eeeeee;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
 }
 .word-list > *:hover {
     background-color: #e2e3e5;
