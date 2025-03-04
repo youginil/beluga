@@ -1,6 +1,7 @@
 use crate::error::Result;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, QueryBuilder, Row, Sqlite, SqliteConnection};
+use tracing::error;
 
 use super::RowID;
 
@@ -10,14 +11,19 @@ pub const WORD_TABLE: &str = "word";
 pub struct WordModel {
     pub id: RowID,
     pub name: String,
+    pub familiar: u32,
     pub create_time: i64,
 }
 
 impl WordModel {
     pub async fn insert(&mut self, conn: &mut SqliteConnection) -> Result<i64> {
-        let sql = format!("INSERT INTO {}(name, create_time) VALUES(?, ?)", WORD_TABLE);
+        let sql = format!(
+            "INSERT INTO {}(name, familiar, create_time) VALUES(?, ?, ?)",
+            WORD_TABLE
+        );
         let id = sqlx::query(&sql)
             .bind(&self.name)
+            .bind(&self.familiar)
             .bind(&self.create_time)
             .execute(conn)
             .await?
@@ -65,6 +71,27 @@ impl WordModel {
         let sql = format!("SELECT id FROM {} WHERE name = ? LIMIT 1", WORD_TABLE);
         let rows = sqlx::query(&sql).bind(name).fetch_all(conn).await?;
         Ok(!rows.is_empty())
+    }
+
+    pub async fn update(&self, conn: &mut SqliteConnection, fields: Vec<&str>) -> Result<()> {
+        let mut set_sqls: Vec<String> = vec![];
+        for field in &fields {
+            set_sqls.push(format!("{} = ?", field));
+        }
+        let set_clause = set_sqls.join(", ");
+        let sql = format!("UPDATE {} SET {} WHERE id = ?", WORD_TABLE, set_clause);
+        let mut query = sqlx::query(&sql);
+        for field in fields {
+            match field {
+                "familiar" => query = query.bind(&self.familiar),
+                _ => {
+                    error!("Invalid field: {}", field);
+                }
+            }
+        }
+        query = query.bind(&self.id);
+        query.execute(conn).await?;
+        Ok(())
     }
 
     pub async fn delete(conn: &mut SqliteConnection, ids: &[RowID]) -> Result<()> {

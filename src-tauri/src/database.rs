@@ -45,9 +45,8 @@ impl Database {
     }
 
     async fn upgrade(&mut self) {
-        let last_version = 1;
         let mut tx = self.conn.begin().await.unwrap();
-        let version = get_user_version(&mut *tx).await;
+        let mut version = get_user_version(&mut *tx).await;
         if version == 0 {
             let sqls: Vec<String> = vec![
                 format!("DROP TABLE IF EXISTS {}", WORD_TABLE),
@@ -71,10 +70,22 @@ impl Database {
                     .await
                     .expect(&format!("fail to exec sql: {}", sql));
             }
-        } else if version < last_version {
-            //
+            version = 1;
         }
-        set_user_version(&mut *tx, last_version).await;
+        if version == 1 {
+            let sqls: Vec<String> = vec![format!(
+                "ALTER TABLE {} ADD COLUMN \"familiar\" INTEGER NOT NULL DEFAULT 0",
+                WORD_TABLE
+            )];
+            for sql in &sqls {
+                sqlx::query(sql.as_str())
+                    .execute(&mut *tx)
+                    .await
+                    .expect(&format!("fail to exec sql: {}", sql));
+            }
+            version = 2;
+        }
+        set_user_version(&mut *tx, version).await;
         tx.commit().await.unwrap();
     }
 }

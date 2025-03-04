@@ -188,9 +188,30 @@ pub async fn add_word(state: State<'_, AppState>, req: String) -> Result<()> {
     let mut word = WordModel {
         id: 0,
         name: req,
+        familiar: 0,
         create_time: current_timestamp(),
     };
     word.insert(&mut db.conn).await?;
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+pub struct FamiliarParams {
+    pub id: RowID,
+    pub familiar: u32,
+}
+
+#[instrument(skip(state))]
+#[command]
+pub async fn set_word_familiar(state: State<'_, AppState>, req: FamiliarParams) -> Result<()> {
+    let mut db = state.db.lock().await;
+    let word = WordModel {
+        id: req.id,
+        name: "".to_string(),
+        familiar: req.familiar,
+        create_time: 0,
+    };
+    word.update(&mut db.conn, vec!["familiar"]).await?;
     Ok(())
 }
 

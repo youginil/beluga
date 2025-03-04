@@ -17,7 +17,7 @@ use tauri::{
 
 use handlers::{
     add_word, delete_words, get_server_port, get_settings, get_word_list, open_devtools,
-    reload_dicts, resize_cache, search, set_settings,
+    reload_dicts, resize_cache, search, set_settings, set_word_familiar,
 };
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 use tokio::sync::{Mutex, RwLock};
@@ -284,6 +284,7 @@ pub async fn run() {
             reload_dicts,
             get_word_list,
             add_word,
+            set_word_familiar,
             delete_words,
         ])
         .build(tauri::generate_context!())

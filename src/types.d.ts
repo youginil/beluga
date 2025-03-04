@@ -20,6 +20,7 @@ interface Configuration {
 interface WordModel {
     id: number;
     name: string;
+    familiar: number;
     create_time: number;
 }
 
@@ -56,6 +57,7 @@ type IpcMessage = {
     >;
     add_word: RR<string, void>;
     delete_words: RR<number[], void>;
+    set_word_familiar: RR<{ id: number; familiar: number }, void>;
 };
 
 interface ChildMessage {

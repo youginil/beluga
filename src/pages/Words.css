@@ -7,8 +7,7 @@
 .word-list > * {
     display: inline-flex;
     align-items: center;
-    padding: 6px 10px;
-    padding-left: 14px;
+    padding: 6px 14px;
     margin: 4px;
     border-radius: 18px;
     background-color: #eeeeee;
@@ -18,19 +17,16 @@
 .word-list > *:hover {
     background-color: #e2e3e5;
 }
-.word-list .del-btn {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    margin-left: 4px;
-    color: #aaaaaa;
-    transition: background-color 0.3s ease;
-}
-.word-list .del-btn:hover {
-    background-color: #ff2e63;
+.word-list > *.know {
+    background-color: #a4b465;
     color: #ffffff;
+}
+.word-list > *.know-well {
+    background-color: #626f47;
+    color: #ffffff;
+}
+.word-ops {
+    position: fixed;
+    top: 10000px;
+    left: 0;
 }
