@@ -58,6 +58,19 @@ const Words: Component = () => {
         }
     }
 
+    let listEl!: HTMLUListElement;
+
+    const CurrentClass = 'current';
+    function setCurrentStyle(word: WordModel) {
+        const idx = pg.list.indexOf(word);
+        const el = listEl.children[idx];
+        const curEl = listEl.querySelector('.' + CurrentClass);
+        if (el !== curEl) {
+            curEl?.classList.remove(CurrentClass);
+            el.classList.add(CurrentClass);
+        }
+    }
+
     async function setFamiliar(level: number) {
         const wd = opWord();
         if (wd === null) {
@@ -170,7 +183,7 @@ const Words: Component = () => {
                                 </div>
                             }
                         >
-                            <ul class="word-list">
+                            <ul class="word-list" ref={listEl}>
                                 <For each={pg.list}>
                                     {(item) => (
                                         <li
@@ -182,10 +195,14 @@ const Words: Component = () => {
                                                     item.familiar ===
                                                     Familiar.KnowWell,
                                             }}
-                                            onClick={() => setWord(item.name)}
+                                            onClick={() => {
+                                                setWord(item.name);
+                                                setCurrentStyle(item);
+                                            }}
                                             onContextMenu={(e) => {
                                                 e.stopPropagation();
                                                 e.preventDefault();
+                                                setCurrentStyle(item);
                                                 handleWordMenu(e, item);
                                                 return false;
                                             }}

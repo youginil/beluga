@@ -9,6 +9,7 @@
     align-items: center;
     padding: 6px 14px;
     margin: 4px;
+    border: 1px solid transparent;
     border-radius: 18px;
     background-color: #eeeeee;
     cursor: pointer;
@@ -17,6 +18,9 @@
     -ms-user-select: none;
     -moz-user-select: none;
     user-select: none;
+}
+.word-list > *.current {
+    border-color: #4d55cc;
 }
 .word-list > *:hover {
     background-color: #e2e3e5;
