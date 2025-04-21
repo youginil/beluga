@@ -1,7 +1,7 @@
 use anyhow::Result;
 use mouse_position::mouse_position::Mouse;
 use ocrs::{ImageSource, OcrEngine};
-use rten_imageproc::{PointF, RotatedRect};
+use rten_imageproc::PointF;
 use serde::Serialize;
 use std::path::PathBuf;
 use std::{collections::HashMap, fs, path::Path, sync::Arc};
@@ -161,10 +161,34 @@ pub fn recognize_text(engine: &OcrEngine, w: u32, h: u32) -> String {
         return "".to_string();
     };
     for monitor in monitors {
-        let mx = monitor.x();
-        let my = monitor.y();
-        let mw = monitor.width() as i32;
-        let mh = monitor.height() as i32;
+        let mx = match monitor.x() {
+            Ok(v) => v,
+            Err(e) => {
+                error!("fail to get monitor x. {}", e);
+                return "".to_string();
+            }
+        };
+        let my = match monitor.y() {
+            Ok(v) => v,
+            Err(e) => {
+                error!("fail to get monitor y. {}", e);
+                return "".to_string();
+            }
+        };
+        let mw = match monitor.width() {
+            Ok(v) => v as i32,
+            Err(e) => {
+                error!("fail to get monitor width. {}", e);
+                return "".to_string();
+            }
+        };
+        let mh = match monitor.height() {
+            Ok(v) => v as i32,
+            Err(e) => {
+                error!("fail to get monitor height. {}", e);
+                return "".to_string();
+            }
+        };
         debug!("Screen: {} {}, {} {}", mx, my, mw, mh);
         if x >= mx && x <= mx + mw && y >= my && y <= my + mh {
             if let Ok(img) = monitor.capture_image() {
@@ -197,7 +221,7 @@ pub fn recognize_text(engine: &OcrEngine, w: u32, h: u32) -> String {
                         return "".to_string();
                     }
                 };
-                let words: Vec<Vec<RotatedRect>> = word_rects.iter().map(|x| vec![*x]).collect();
+                let words = word_rects.iter().map(|x| vec![*x]).collect::<Vec<Vec<_>>>();
                 if let Ok(wds) = engine.recognize_text(&ocr_input, &words) {
                     let x0 = x as f32 - x1 as f32;
                     let y0 = y as f32 - y1 as f32;
