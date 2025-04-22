@@ -6,7 +6,7 @@ use sqlx::{
 };
 use tracing::debug;
 
-use crate::model::word::WORD_TABLE;
+use crate::model::{book::BOOK_TABLE, word::WORD_TABLE};
 
 const DB_FILE: &str = "data.db";
 
@@ -48,8 +48,9 @@ impl Database {
         let mut tx = self.conn.begin().await.unwrap();
         let mut version = get_user_version(&mut *tx).await;
         let init_version = version;
+        let mut sqls: Vec<String> = vec![];
         if version == 0 {
-            let sqls: Vec<String> = vec![
+            sqls.extend_from_slice(&vec![
                 format!("DROP TABLE IF EXISTS {}", WORD_TABLE),
                 format!(
                     "CREATE TABLE {} (
@@ -64,27 +65,44 @@ impl Database {
                     "CREATE INDEX word_create_time ON {} (create_time);",
                     WORD_TABLE
                 ),
-            ];
-            for sql in &sqls {
-                sqlx::query(sql.as_str())
-                    .execute(&mut *tx)
-                    .await
-                    .expect(&format!("fail to exec sql: {}", sql));
-            }
+            ]);
             version = 1;
         }
         if version == 1 {
-            let sqls: Vec<String> = vec![format!(
+            sqls.extend_from_slice(&vec![format!(
                 "ALTER TABLE {} ADD COLUMN \"familiar\" INTEGER NOT NULL DEFAULT 0",
                 WORD_TABLE
-            )];
-            for sql in &sqls {
-                sqlx::query(sql.as_str())
-                    .execute(&mut *tx)
-                    .await
-                    .expect(&format!("fail to exec sql: {}", sql));
-            }
+            )]);
             version = 2;
+        }
+        if version == 2 {
+            sqls.extend_from_slice(&vec![
+                "DROP INDEX IF EXISTS word_name".to_string(),
+                format!(
+                    "ALTER TABLE {} ADD COLUMN \"book_id\" INTEGER NOT NULL DEFAULT 0",
+                    WORD_TABLE
+                ),
+                format!(
+                    "CREATE UNIQUE INDEX word_book_id_name ON {} (book_id, name)",
+                    WORD_TABLE
+                ),
+                format!("DROP TABLE IF EXISTS {}", BOOK_TABLE),
+                format!(
+                    "CREATE TABLE {} (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                name        TEXT    NOT NULL,
+                create_time INTEGER NOT NULL
+            )",
+                    BOOK_TABLE
+                ),
+            ]);
+            version = 3;
+        }
+        for sql in &sqls {
+            sqlx::query(sql.as_str())
+                .execute(&mut *tx)
+                .await
+                .expect(&format!("fail to exec sql: {}", sql));
         }
         if init_version != version {
             set_user_version(&mut *tx, version).await;

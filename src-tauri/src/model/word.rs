@@ -12,18 +12,20 @@ pub struct WordModel {
     pub id: RowID,
     pub name: String,
     pub familiar: u32,
+    pub book_id: RowID,
     pub create_time: i64,
 }
 
 impl WordModel {
     pub async fn insert(&mut self, conn: &mut SqliteConnection) -> Result<i64> {
         let sql = format!(
-            "INSERT INTO {}(name, familiar, create_time) VALUES(?, ?, ?)",
+            "INSERT INTO {}(name, familiar, book_id, create_time) VALUES(?, ?, ?, ?)",
             WORD_TABLE
         );
         let id = sqlx::query(&sql)
             .bind(&self.name)
             .bind(&self.familiar)
+            .bind(&self.book_id)
             .bind(&self.create_time)
             .execute(conn)
             .await?
@@ -32,8 +34,26 @@ impl WordModel {
         Ok(id)
     }
 
+    pub async fn bulk_insert(conn: &mut SqliteConnection, list: &Vec<WordModel>) -> Result<()> {
+        let sql = format!(
+            "INSERT INTO {}(name, familiar, book_id, create_time) ",
+            WORD_TABLE
+        );
+        let mut qb = QueryBuilder::new(&sql);
+        qb.push_values(list, |mut b, item| {
+            b.push_bind(&item.name)
+                .push_bind(&item.familiar)
+                .push_bind(&item.book_id)
+                .push_bind(&item.create_time);
+        });
+        qb.push(" ON CONFLICT(book_id, name) DO NOTHING");
+        qb.build().execute(conn).await?;
+        Ok(())
+    }
+
     pub async fn list(
         conn: &mut SqliteConnection,
+        book_id: RowID,
         page: usize,
         size: usize,
         order: Option<String>,
@@ -48,8 +68,9 @@ impl WordModel {
             "id ASC"
         };
         let sql = format!(
-            "SELECT * FROM {} ORDER BY {} LIMIT {} OFFSET {}",
+            "SELECT * FROM {} WHERE book_id = {} ORDER BY {} LIMIT {} OFFSET {}",
             WORD_TABLE,
+            book_id,
             order_field,
             size,
             (page - 1) * size
@@ -59,16 +80,26 @@ impl WordModel {
         Ok(list)
     }
 
-    pub async fn count(conn: &mut SqliteConnection) -> Result<u32> {
-        let sql = format!("SELECT count(id) AS c FROM {}", WORD_TABLE);
+    pub async fn count(conn: &mut SqliteConnection, book_id: RowID) -> Result<u32> {
+        let sql = format!(
+            "SELECT count(id) AS c FROM {} WHERE book_id = {}",
+            WORD_TABLE, book_id
+        );
         let query = sqlx::query(&sql);
         let row = query.fetch_one(conn).await?;
         let total: u32 = row.get("c");
         Ok(total)
     }
 
-    pub async fn exist_by_name(conn: &mut SqliteConnection, name: &str) -> Result<bool> {
-        let sql = format!("SELECT id FROM {} WHERE name = ? LIMIT 1", WORD_TABLE);
+    pub async fn exist_by_name(
+        conn: &mut SqliteConnection,
+        book_id: RowID,
+        name: &str,
+    ) -> Result<bool> {
+        let sql = format!(
+            "SELECT id FROM {} WHERE book_id = {} AND name = ? LIMIT 1",
+            WORD_TABLE, book_id
+        );
         let rows = sqlx::query(&sql).bind(name).fetch_all(conn).await?;
         Ok(!rows.is_empty())
     }
@@ -95,6 +126,9 @@ impl WordModel {
     }
 
     pub async fn delete(conn: &mut SqliteConnection, ids: &[RowID]) -> Result<()> {
+        if ids.is_empty() {
+            return Ok(());
+        }
         let mut qb: QueryBuilder<Sqlite> =
             QueryBuilder::new(format!("DELETE FROM {} WHERE 1 = 1", WORD_TABLE));
         if !ids.is_empty() {
@@ -105,6 +139,28 @@ impl WordModel {
                     sp.push_bind_unseparated(ids[i]);
                 } else {
                     sp.push_bind(ids[i]);
+                }
+            }
+            sp.push_unseparated(")");
+        }
+        qb.build().execute(conn).await?;
+        Ok(())
+    }
+
+    pub async fn delete_by_book_ids(conn: &mut SqliteConnection, book_ids: &[RowID]) -> Result<()> {
+        if book_ids.is_empty() {
+            return Ok(());
+        }
+        let mut qb: QueryBuilder<Sqlite> =
+            QueryBuilder::new(format!("DELETE FROM {} WHERE 1 = 1", WORD_TABLE));
+        if !book_ids.is_empty() {
+            qb.push(" AND book_id IN (");
+            let mut sp = qb.separated(",");
+            for i in 0..book_ids.len() {
+                if i == book_ids.len() - 1 {
+                    sp.push_bind_unseparated(book_ids[i]);
+                } else {
+                    sp.push_bind(book_ids[i]);
                 }
             }
             sp.push_unseparated(")");

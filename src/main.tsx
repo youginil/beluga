@@ -13,13 +13,15 @@ import { sendMessage } from './base';
 import { setAppConfig, setServerPort } from './state';
 import { event } from '@tauri-apps/api';
 import Words from './pages/Words';
+import Book from './pages/Book';
 
 render(
     () => (
         <Router root={App}>
             <Route path="/" component={Home} />
             <Route path="/settings" component={Settings} />
-            <Route path="/words" component={Words}></Route>
+            <Route path="/books" component={Book}></Route>
+            <Route path="/book/:id" component={Words}></Route>
         </Router>
     ),
     document.getElementById('root')!

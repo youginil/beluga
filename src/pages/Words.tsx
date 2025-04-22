@@ -11,6 +11,7 @@ import { sendMessage } from '../base';
 import './Words.css';
 import PopupWord from '../components/PopupWord';
 import { createStore } from 'solid-js/store';
+import { useParams } from '@solidjs/router';
 
 enum Familiar {
     DontKnow = 0,
@@ -31,6 +32,8 @@ const OrderOptions = [
 ];
 
 const Words: Component = () => {
+    const params = useParams();
+    const bookId = +params.id;
     const [pageSize, setPageSize] = createSignal(PageSizeOptions[0]);
     const [order, setOrder] = createSignal(OrderOptions[0].value);
     const [pg, setPg] = createStore<Pagination<WordModel>>({
@@ -48,6 +51,7 @@ const Words: Component = () => {
         try {
             setLoading(true);
             const r = await sendMessage('get_word_list', {
+                book_id: bookId,
                 page,
                 size: pageSize(),
                 order: order(),
@@ -137,7 +141,7 @@ const Words: Component = () => {
 
     return (
         <>
-            <BackPage title="Words">
+            <BackPage title="Words" url="/books">
                 <div class="h-100 d-flex flex-column responsive-wrapper">
                     <div class="flex-shrink-0 d-flex py-2">
                         <select

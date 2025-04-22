@@ -100,7 +100,7 @@ const Home: Component = () => {
     }
 
     async function addToBook(name: string) {
-        await sendMessage('add_word', name);
+        await sendMessage('add_word', [0, name]);
         poptip.info({ html: `<b>${name}</b> is added` });
     }
 
@@ -121,7 +121,7 @@ const Home: Component = () => {
     return (
         <div class="d-flex flex-column position-fixed top-0 bottom-0 start-0 end-0">
             <header class="flex-shrink-0 p-2 bg-light-subtle d-flex align-items-center">
-                <A href="/words" class="btn btn-light me-2">
+                <A href="/books" class="btn btn-light me-2">
                     <i class="bi bi-star-fill"></i>
                 </A>
                 <div class="flex-grow-1 position-relative">

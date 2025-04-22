@@ -17,10 +17,17 @@ interface Configuration {
     dev_mode: boolean;
 }
 
+interface BookModel {
+    id: number;
+    name: string;
+    create_time: number;
+}
+
 interface WordModel {
     id: number;
     name: string;
     familiar: number;
+    book_id: number;
     create_time: number;
 }
 
@@ -51,11 +58,16 @@ type IpcMessage = {
     get_settings: RR<void, Configuration>;
     set_settings: RR<Partial<Configuration>, void>;
     reload_dicts: RR<void, void>;
+    get_book_list: RR<void, BookModel[]>;
+    add_book: RR<string, BookModel>;
+    import_book: RR<string, void>;
+    update_book: RR<{ id: number; name?: string }, void>;
+    delete_book: RR<number[], void>;
     get_word_list: RR<
-        { page: number; size: number; order?: string },
+        { book_id: number; page: number; size: number; order?: string },
         Pagination<WordModel>
     >;
-    add_word: RR<string, void>;
+    add_word: RR<[number, string], void>;
     delete_words: RR<number[], void>;
     set_word_familiar: RR<{ id: number; familiar: number }, void>;
 };

@@ -1,12 +1,14 @@
 use crate::{
     base::Pagination,
     error::Result,
-    model::{word::WordModel, RowID},
+    model::{book::BookModel, word::WordModel, RowID},
     settings::{Configuration, DictItem},
     utils::current_timestamp,
 };
 use serde::Deserialize;
+use sqlx::Connection;
 use tauri::{command, AppHandle, Manager, State};
+use tokio::fs;
 use tracing::instrument;
 
 use crate::base::AppState;
@@ -142,8 +144,106 @@ pub async fn reload_dicts(state: State<'_, AppState>) -> Result<()> {
     Ok(())
 }
 
+#[instrument(skip(state))]
+#[command]
+pub async fn get_book_list(state: State<'_, AppState>) -> Result<Vec<BookModel>> {
+    let mut db = state.db.lock().await;
+    let mut list = BookModel::list(&mut db.conn, 1, 10000000, None).await?;
+    let default_book = BookModel {
+        id: 0,
+        name: "Favorite".to_string(),
+        create_time: 0,
+    };
+    list.insert(0, default_book);
+    Ok(list)
+}
+
+#[instrument(skip(state))]
+#[command]
+pub async fn add_book(state: State<'_, AppState>, req: String) -> Result<BookModel> {
+    let mut db = state.db.lock().await;
+    let mut book = BookModel {
+        id: 0,
+        name: req,
+        create_time: current_timestamp(),
+    };
+    book.insert(&mut db.conn).await?;
+    Ok(book)
+}
+
+#[derive(Deserialize)]
+struct BookImport {
+    pub name: String,
+    pub words: Vec<String>,
+}
+
+#[instrument(skip(state))]
+#[command]
+pub async fn import_book(state: State<'_, AppState>, req: String) -> Result<()> {
+    let s = fs::read_to_string(req).await?;
+    let books: Vec<BookImport> = serde_json::from_str(&s)?;
+    let mut db = state.db.lock().await;
+    let mut tx = db.conn.begin().await?;
+    let now = current_timestamp();
+    for item in books {
+        let mut book = BookModel {
+            id: 0,
+            name: item.name,
+            create_time: now,
+        };
+        let book_id = book.insert(&mut *tx).await?;
+        let words = item
+            .words
+            .iter()
+            .map(|x| WordModel {
+                id: 0,
+                name: x.clone(),
+                familiar: 0,
+                book_id,
+                create_time: now,
+            })
+            .collect::<Vec<WordModel>>();
+        WordModel::bulk_insert(&mut *tx, &words).await?;
+    }
+    tx.commit().await?;
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateBookParams {
+    pub id: RowID,
+    pub name: Option<String>,
+}
+
+#[instrument(skip(state))]
+#[command]
+pub async fn update_book(state: State<'_, AppState>, mut req: UpdateBookParams) -> Result<()> {
+    let mut db = state.db.lock().await;
+    let mut book = BookModel::default();
+    book.id = req.id;
+    let mut fields: Vec<&str> = vec![];
+    if let Some(v) = req.name.take() {
+        book.name = v;
+        fields.push("name");
+    }
+    book.update(&mut db.conn, fields).await?;
+    Ok(())
+}
+
+#[instrument(skip(state))]
+#[command]
+pub async fn delete_book(state: State<'_, AppState>, req: Vec<RowID>) -> Result<()> {
+    let mut db = state.db.lock().await;
+    let mut tx = db.conn.begin().await?;
+    BookModel::delete(&mut tx, &req).await?;
+    WordModel::delete_by_book_ids(&mut tx, &req).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
 #[derive(Deserialize, Debug)]
 pub struct WordListParams {
+    pub book_id: RowID,
     pub page: u32,
     pub size: u32,
     pub order: Option<String>,
@@ -155,10 +255,11 @@ pub async fn get_word_list(
     state: State<'_, AppState>,
     req: WordListParams,
 ) -> Result<Pagination<WordModel>> {
+    let book_id = req.book_id;
     let mut page = req.page;
     let size = req.size;
     let mut db = state.db.lock().await;
-    let total = WordModel::count(&mut db.conn).await?;
+    let total = WordModel::count(&mut db.conn, book_id).await?;
     let pages = ((total as f64) / (size as f64)).ceil() as u32;
     if page > pages {
         page = pages;
@@ -173,22 +274,31 @@ pub async fn get_word_list(
     if total == 0 {
         return Ok(pg);
     }
-    let list = WordModel::list(&mut db.conn, page as usize, size as usize, req.order).await?;
+    let list = WordModel::list(
+        &mut db.conn,
+        book_id,
+        page as usize,
+        size as usize,
+        req.order,
+    )
+    .await?;
     pg.list = list;
     Ok(pg)
 }
 
 #[instrument(skip(state))]
 #[command]
-pub async fn add_word(state: State<'_, AppState>, req: String) -> Result<()> {
+pub async fn add_word(state: State<'_, AppState>, req: (RowID, String)) -> Result<()> {
+    let (book_id, name) = req;
     let mut db = state.db.lock().await;
-    if WordModel::exist_by_name(&mut db.conn, &req).await? {
+    if WordModel::exist_by_name(&mut db.conn, book_id, &name).await? {
         return Ok(());
     }
     let mut word = WordModel {
         id: 0,
-        name: req,
+        name,
         familiar: 0,
+        book_id,
         create_time: current_timestamp(),
     };
     word.insert(&mut db.conn).await?;
@@ -209,6 +319,7 @@ pub async fn set_word_familiar(state: State<'_, AppState>, req: FamiliarParams) 
         id: req.id,
         name: "".to_string(),
         familiar: req.familiar,
+        book_id: 0,
         create_time: 0,
     };
     word.update(&mut db.conn, vec!["familiar"]).await?;

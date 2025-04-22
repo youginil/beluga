@@ -1,9 +1,10 @@
 import { A } from '@solidjs/router';
-import { ParentComponent } from 'solid-js';
+import { Component, ParentComponent } from 'solid-js';
 
 interface BackPageProps {
     title: string;
     url?: string;
+    right?: Component;
 }
 
 const BackPage: ParentComponent<BackPageProps> = (props) => {
@@ -16,9 +17,15 @@ const BackPage: ParentComponent<BackPageProps> = (props) => {
                 <h4 class="mb-0 flex-grow-1 d-flex justify-content-center align-items-center">
                     {props.title}
                 </h4>
-                <button class="btn invisible" disabled>
-                    <i class="bi bi-arrow-left"></i>
-                </button>
+                <div>
+                    {props.right ? (
+                        <props.right></props.right>
+                    ) : (
+                        <button class="btn invisible" disabled>
+                            <i class="bi bi-arrow-left"></i>
+                        </button>
+                    )}
+                </div>
             </header>
             <div class="flex-grow-1 overflow-y-auto">{props.children}</div>
         </div>
