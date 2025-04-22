@@ -16,9 +16,9 @@ use tauri::{
 };
 
 use handlers::{
-    add_book, add_word, delete_book, delete_words, get_book_list, get_server_port, get_settings,
-    get_word_list, import_book, open_devtools, reload_dicts, resize_cache, search, set_settings,
-    set_word_familiar, update_book,
+    add_book, add_word, delete_book, delete_words, get_book_by_id, get_book_list, get_server_port,
+    get_settings, get_word_list, import_book, open_devtools, reload_dicts, resize_cache, search,
+    set_settings, set_word_familiar, update_book,
 };
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 use tokio::sync::{Mutex, RwLock};
@@ -284,6 +284,7 @@ pub async fn run() {
             set_settings,
             reload_dicts,
             get_book_list,
+            get_book_by_id,
             add_book,
             import_book,
             update_book,

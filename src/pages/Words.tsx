@@ -1,14 +1,15 @@
 import {
     Component,
     For,
+    Match,
     Show,
+    Switch,
     createSignal,
-    onCleanup,
     onMount,
 } from 'solid-js';
 import BackPage from '../components/BackPage';
 import { sendMessage } from '../base';
-import './Words.css';
+import style from './Words.module.css';
 import PopupWord from '../components/PopupWord';
 import { createStore } from 'solid-js/store';
 import { useParams } from '@solidjs/router';
@@ -19,7 +20,7 @@ enum Familiar {
     KnowWell = 2,
 }
 
-const PageSizeOptions = [100, 200];
+const PageSizeOptions = [20, 50];
 const OrderOptions = [
     {
         name: 'Time',
@@ -31,9 +32,25 @@ const OrderOptions = [
     },
 ];
 
+const FamiliarFlag: Component<{ word: WordModel }> = (props) => {
+    return (
+        <>
+            <Switch fallback={''}>
+                <Match when={props.word.familiar === Familiar.Know}>
+                    <span>👌</span>
+                </Match>
+                <Match when={props.word.familiar === Familiar.KnowWell}>
+                    <span>💯</span>
+                </Match>
+            </Switch>
+        </>
+    );
+};
+
 const Words: Component = () => {
     const params = useParams();
     const bookId = +params.id;
+    const [title, setTitle] = createSignal('');
     const [pageSize, setPageSize] = createSignal(PageSizeOptions[0]);
     const [order, setOrder] = createSignal(OrderOptions[0].value);
     const [pg, setPg] = createStore<Pagination<WordModel>>({
@@ -43,8 +60,7 @@ const Words: Component = () => {
         total: 0,
         list: [],
     });
-
-    const [opWord, setOpWord] = createSignal<WordModel | null>(null);
+    const [word, setWord] = createSignal<string | null>(null);
 
     const [loading, setLoading] = createSignal(false);
     async function getWordList(page: number) {
@@ -62,24 +78,7 @@ const Words: Component = () => {
         }
     }
 
-    let listEl!: HTMLUListElement;
-
-    const CurrentClass = 'current';
-    function setCurrentStyle(word: WordModel) {
-        const idx = pg.list.indexOf(word);
-        const el = listEl.children[idx];
-        const curEl = listEl.querySelector('.' + CurrentClass);
-        if (el !== curEl) {
-            curEl?.classList.remove(CurrentClass);
-            el.classList.add(CurrentClass);
-        }
-    }
-
-    async function setFamiliar(level: number) {
-        const wd = opWord();
-        if (wd === null) {
-            return;
-        }
+    async function setFamiliar(wd: WordModel, level: number) {
         await sendMessage('set_word_familiar', { id: wd.id, familiar: level });
         setPg(
             'list',
@@ -89,9 +88,7 @@ const Words: Component = () => {
         );
     }
 
-    async function deleteWord(e: MouseEvent) {
-        e.stopPropagation();
-        const wd = opWord();
+    async function deleteWord(wd: WordModel) {
         if (wd === null) {
             return;
         }
@@ -99,49 +96,17 @@ const Words: Component = () => {
         getWordList(pg.page);
     }
 
-    let opsEl!: HTMLDivElement;
-
-    function handleWordMenu(e: MouseEvent, word: WordModel) {
-        setOpWord(word);
-        opsEl.style.visibility = 'hidden';
-        opsEl.style.left = '0';
-        setTimeout(() => {
-            const x = e.clientX;
-            const y = e.clientY;
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            let left = x;
-            let top = y;
-            if (x > w - x) {
-                left = x - opsEl.clientWidth;
-            }
-            if (y > h - y) {
-                top = y - opsEl.clientHeight;
-            }
-            opsEl.style.left = `${left}px`;
-            opsEl.style.top = `${top}px`;
-            opsEl.style.visibility = 'visible';
-        }, 0);
-    }
-
-    function hideOpsEl() {
-        opsEl.style.left = '1000000px';
-    }
-
-    onMount(() => {
+    onMount(async () => {
         getWordList(1);
-        document.addEventListener('click', hideOpsEl);
+        const book = await sendMessage('get_book_by_id', bookId);
+        if (book) {
+            setTitle(book.name);
+        }
     });
-
-    onCleanup(() => {
-        document.removeEventListener('click', hideOpsEl);
-    });
-
-    const [word, setWord] = createSignal<string | null>(null);
 
     return (
         <>
-            <BackPage title="Words" url="/books">
+            <BackPage title={title()} url="/books">
                 <div class="h-100 d-flex flex-column responsive-wrapper">
                     <div class="flex-shrink-0 d-flex py-2">
                         <select
@@ -183,35 +148,104 @@ const Words: Component = () => {
                             fallback={
                                 <div class="h-100 d-flex justify-content-center align-items-center fs-5">
                                     <i class="bi bi-ban me-2"></i>
-                                    No word
+                                    No Word
                                 </div>
                             }
                         >
-                            <ul class="word-list" ref={listEl}>
+                            <ul
+                                class={style['word-list']}
+                                classList={{ 'list-group': true }}
+                            >
                                 <For each={pg.list}>
                                     {(item) => (
                                         <li
-                                            classList={{
-                                                know:
-                                                    item.familiar ===
-                                                    Familiar.Know,
-                                                'know-well':
-                                                    item.familiar ===
-                                                    Familiar.KnowWell,
-                                            }}
-                                            onClick={() => {
-                                                setWord(item.name);
-                                                setCurrentStyle(item);
-                                            }}
-                                            onContextMenu={(e) => {
-                                                e.stopPropagation();
-                                                e.preventDefault();
-                                                setCurrentStyle(item);
-                                                handleWordMenu(e, item);
-                                                return false;
-                                            }}
+                                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                            onClick={() => setWord(item.name)}
                                         >
-                                            {item.name}
+                                            <span
+                                                class="word-name"
+                                                classList={{
+                                                    know:
+                                                        item.familiar ===
+                                                        Familiar.Know,
+                                                    'know-well':
+                                                        item.familiar ===
+                                                        Familiar.KnowWell,
+                                                }}
+                                            >
+                                                <FamiliarFlag
+                                                    word={item}
+                                                ></FamiliarFlag>
+                                                {item.name}
+                                            </span>
+                                            <div class="dropdown">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-ghost"
+                                                    data-bs-toggle="dropdown"
+                                                    aria-expanded="false"
+                                                >
+                                                    <i class="bi bi-three-dots"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a
+                                                            class="dropdown-item"
+                                                            href="#"
+                                                            onClick={() =>
+                                                                setFamiliar(
+                                                                    item,
+                                                                    0
+                                                                )
+                                                            }
+                                                        >
+                                                            Don't Know
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a
+                                                            class="dropdown-item"
+                                                            href="#"
+                                                            onClick={() =>
+                                                                setFamiliar(
+                                                                    item,
+                                                                    1
+                                                                )
+                                                            }
+                                                        >
+                                                            Know
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a
+                                                            class="dropdown-item"
+                                                            href="#"
+                                                            onClick={() =>
+                                                                setFamiliar(
+                                                                    item,
+                                                                    2
+                                                                )
+                                                            }
+                                                        >
+                                                            Know Well
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <hr class="dropdown-divider"></hr>
+                                                    </li>
+                                                    <li>
+                                                        <a
+                                                            class="dropdown-item"
+                                                            href="#"
+                                                            onClick={() =>
+                                                                deleteWord(item)
+                                                            }
+                                                        >
+                                                            Delete
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </li>
                                     )}
                                 </For>
@@ -242,41 +276,6 @@ const Words: Component = () => {
                             </button>
                         </div>
                     </div>
-                </div>
-                <div
-                    class="btn-group-vertical shadow-lg word-ops"
-                    role="group"
-                    aria-label="Vertical button group"
-                    ref={opsEl}
-                >
-                    <button
-                        type="button"
-                        class="btn btn-light"
-                        onClick={() => setFamiliar(Familiar.KnowWell)}
-                    >
-                        Know Well
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-light"
-                        onClick={() => setFamiliar(Familiar.Know)}
-                    >
-                        Know
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-light"
-                        onClick={() => setFamiliar(Familiar.DontKnow)}
-                    >
-                        Don't Know
-                    </button>
-                    <button
-                        type="button"
-                        class="btn btn-danger"
-                        onClick={deleteWord}
-                    >
-                        Delete
-                    </button>
                 </div>
             </BackPage>
             <PopupWord word={word()} setWord={setWord}></PopupWord>

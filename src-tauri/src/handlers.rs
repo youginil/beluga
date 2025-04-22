@@ -160,6 +160,14 @@ pub async fn get_book_list(state: State<'_, AppState>) -> Result<Vec<BookModel>>
 
 #[instrument(skip(state))]
 #[command]
+pub async fn get_book_by_id(state: State<'_, AppState>, req: RowID) -> Result<Option<BookModel>> {
+    let mut db = state.db.lock().await;
+    let data = BookModel::get_by_id(&mut db.conn, req).await?;
+    Ok(data)
+}
+
+#[instrument(skip(state))]
+#[command]
 pub async fn add_book(state: State<'_, AppState>, req: String) -> Result<BookModel> {
     let mut db = state.db.lock().await;
     let mut book = BookModel {

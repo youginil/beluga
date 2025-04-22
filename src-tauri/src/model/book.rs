@@ -27,6 +27,13 @@ impl BookModel {
         Ok(id)
     }
 
+    pub async fn get_by_id(conn: &mut SqliteConnection, id: RowID) -> Result<Option<BookModel>> {
+        let sql = format!("SELECT * FROM {} WHERE id = {} LIMIT 1", BOOK_TABLE, id);
+        let query = sqlx::query_as(&sql);
+        let data: Option<BookModel> = query.fetch_optional(conn).await?;
+        Ok(data)
+    }
+
     pub async fn list(
         conn: &mut SqliteConnection,
         page: usize,

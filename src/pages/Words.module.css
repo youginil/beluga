@@ -1,0 +1,12 @@
+.word-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0;
+}
+.word-list .word-name.know {
+    color: #a4b465;
+}
+.word-list .word-name.know-well {
+    color: #626f47;
+}

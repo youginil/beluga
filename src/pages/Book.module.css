@@ -6,7 +6,7 @@
     align-items: center;
     padding: 8px 0;
     min-height: 55px;
-    cursor: pointer;
+    cursor: default;
 }
 .book:not(:last-child) {
     border-bottom: 1px solid #dddddd;

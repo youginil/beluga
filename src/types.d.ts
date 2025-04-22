@@ -63,6 +63,7 @@ type IpcMessage = {
     import_book: RR<string, void>;
     update_book: RR<{ id: number; name?: string }, void>;
     delete_book: RR<number[], void>;
+    get_book_by_id: RR<number, BookModel | null>;
     get_word_list: RR<
         { book_id: number; page: number; size: number; order?: string },
         Pagination<WordModel>
