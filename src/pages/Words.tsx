@@ -9,7 +9,6 @@ import {
 } from 'solid-js';
 import BackPage from '../components/BackPage';
 import { sendMessage } from '../base';
-import style from './Words.module.css';
 import PopupWord from '../components/PopupWord';
 import { createStore } from 'solid-js/store';
 import { useParams } from '@solidjs/router';
@@ -152,33 +151,25 @@ const Words: Component = () => {
                                 </div>
                             }
                         >
-                            <ul
-                                class={style['word-list']}
-                                classList={{ 'list-group': true }}
-                            >
+                            <ul class="list-group">
                                 <For each={pg.list}>
                                     {(item) => (
                                         <li
                                             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                                             onClick={() => setWord(item.name)}
                                         >
-                                            <span
-                                                class="word-name"
-                                                classList={{
-                                                    know:
-                                                        item.familiar ===
-                                                        Familiar.Know,
-                                                    'know-well':
-                                                        item.familiar ===
-                                                        Familiar.KnowWell,
-                                                }}
-                                            >
+                                            <span>
                                                 <FamiliarFlag
                                                     word={item}
                                                 ></FamiliarFlag>
                                                 {item.name}
                                             </span>
-                                            <div class="dropdown">
+                                            <div
+                                                class="dropdown"
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
+                                                }
+                                            >
                                                 <button
                                                     type="button"
                                                     class="btn btn-ghost"

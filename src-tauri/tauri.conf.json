@@ -46,7 +46,7 @@
     },
     "productName": "Beluga",
     "mainBinaryName": "Beluga",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "identifier": "com.youginil.beluga",
     "plugins": {},
     "app": {
