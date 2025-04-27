@@ -35,19 +35,25 @@ impl WordModel {
     }
 
     pub async fn bulk_insert(conn: &mut SqliteConnection, list: &Vec<WordModel>) -> Result<()> {
+        if list.is_empty() {
+            return Ok(());
+        }
         let sql = format!(
             "INSERT INTO {}(name, familiar, book_id, create_time) ",
             WORD_TABLE
         );
-        let mut qb = QueryBuilder::new(&sql);
-        qb.push_values(list, |mut b, item| {
-            b.push_bind(&item.name)
-                .push_bind(&item.familiar)
-                .push_bind(&item.book_id)
-                .push_bind(&item.create_time);
-        });
-        qb.push(" ON CONFLICT(book_id, name) DO NOTHING");
-        qb.build().execute(conn).await?;
+        let chunks = list.chunks(1000);
+        for chunk in chunks {
+            let mut qb = QueryBuilder::new(&sql);
+            qb.push_values(chunk, |mut b, item| {
+                b.push_bind(&item.name)
+                    .push_bind(&item.familiar)
+                    .push_bind(&item.book_id)
+                    .push_bind(&item.create_time);
+            });
+            qb.push(" ON CONFLICT(book_id, name) DO NOTHING");
+            qb.build().execute(&mut *conn).await?;
+        }
         Ok(())
     }
 
