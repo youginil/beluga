@@ -21,14 +21,9 @@ enum Familiar {
 
 const PageSizeOptions = [20, 50];
 const OrderOptions = [
-    {
-        name: 'Time',
-        value: 'time',
-    },
-    {
-        name: 'Name',
-        value: 'name',
-    },
+    { name: 'Default', value: '' },
+    { name: 'Time', value: 'time' },
+    { name: 'Name', value: 'name' },
 ];
 
 const FamiliarFlag: Component<{ word: WordModel }> = (props) => {
