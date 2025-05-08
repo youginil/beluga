@@ -107,6 +107,7 @@ const Book: Component = () => {
         const file = await open({
             multiple: false,
             filters: [{ name: 'JSON', extensions: ['json'] }],
+            directory: false,
         });
         if (file === null) {
             return;

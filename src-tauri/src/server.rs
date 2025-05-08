@@ -12,6 +12,7 @@ use axum::{
 };
 use axum_extra::extract::CookieJar;
 use beluga_core::dictionary::{Dictionary, NodeCache};
+use log::warn;
 use serde::Deserialize;
 use tauri::AppHandle;
 use tokio::{
@@ -19,7 +20,6 @@ use tokio::{
     net::TcpListener,
     sync::{Mutex, RwLock},
 };
-use tracing::warn;
 
 use crate::{base::get_resource_directory, settings::Settings};
 

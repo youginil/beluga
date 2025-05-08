@@ -4,6 +4,19 @@ import { batch, createMemo, createSignal } from 'solid-js';
 import { appConfig, serverPort } from './state';
 import { createStore } from 'solid-js/store';
 
+declare global {
+    interface Window {
+        __TARGET_OS__: OperationSystem;
+    }
+}
+
+export async function getPlatform() {
+    if (import.meta.env.DEV) {
+        return await sendMessage('platform', undefined);
+    }
+    return window.__TARGET_OS__;
+}
+
 export function sendMessage<K extends keyof IpcMessage>(
     channel: K,
     req: IpcMessage[K]['req']

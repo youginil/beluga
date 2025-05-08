@@ -1,7 +1,7 @@
 use crate::error::Result;
+use log::error;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, QueryBuilder, Sqlite, SqliteConnection};
-use tracing::error;
 
 use super::RowID;
 

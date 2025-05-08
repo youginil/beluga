@@ -2,7 +2,8 @@
 
 ```
 node scripts/icon.js
-RUST_LOG=debug,beluga=trace RUST_BACKTRACE=full pnpm tauri dev
+TAURI_ENV_DEBUG=1 RUST_BACKTRACE=full pnpm tauri dev
+TAURI_ENV_DEBUG=1 RUST_BACKTRACE=full pnpm tauri android dev -v
 pnpm tauri build
 ```
 

@@ -1,17 +1,19 @@
 use anyhow::Result;
-use mouse_position::mouse_position::Mouse;
-use ocrs::{ImageSource, OcrEngine};
-use rten_imageproc::PointF;
+use log::{info, warn};
 use serde::Serialize;
 use std::path::PathBuf;
 use std::{collections::HashMap, fs, path::Path, sync::Arc};
 use tauri::{AppHandle, Manager};
-use tracing::{debug, error, info, warn};
-use xcap::image::{DynamicImage, GenericImageView};
-
 use tokio::sync::{Mutex, RwLock};
+#[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
+use {
+    log::{debug, error},
+    mouse_position::mouse_position::Mouse,
+    ocrs::{ImageSource, OcrEngine},
+    rten_imageproc::PointF,
+    xcap::image::{DynamicImage, GenericImageView},
+};
 
-use crate::database::Database;
 use crate::settings::{DictItem, Settings};
 
 use beluga_core::{
@@ -25,8 +27,6 @@ pub struct AppState {
     dicts: Arc<RwLock<HashMap<u32, Arc<Mutex<Dictionary>>>>>,
     pub cache: Arc<RwLock<NodeCache>>,
     pub settings: Arc<RwLock<Settings>>,
-    pub db: Arc<Mutex<Database>>,
-    pub engine: Arc<Mutex<OcrEngine>>,
 }
 
 impl AppState {
@@ -34,8 +34,6 @@ impl AppState {
         settings: Arc<RwLock<Settings>>,
         dicts: Arc<RwLock<HashMap<u32, Arc<Mutex<Dictionary>>>>>,
         cache: Arc<RwLock<NodeCache>>,
-        db: Arc<Mutex<Database>>,
-        engine: Arc<Mutex<OcrEngine>>,
     ) -> Self {
         Self {
             last_dict_id: Arc::new(Mutex::new(1)),
@@ -43,8 +41,6 @@ impl AppState {
             dicts,
             cache,
             settings,
-            db,
-            engine,
         }
     }
 
@@ -147,6 +143,7 @@ pub struct Pagination<T> {
     pub list: Vec<T>,
 }
 
+#[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
 pub fn recognize_text(engine: &OcrEngine, w: u32, h: u32) -> String {
     let w = w as i32;
     let h = h as i32;

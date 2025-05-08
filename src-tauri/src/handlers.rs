@@ -1,19 +1,24 @@
+use std::sync::Arc;
+
 use crate::{
     base::Pagination,
+    database::Database,
     error::Result,
     model::{book::BookModel, word::WordModel, RowID},
     settings::{Configuration, DictItem},
     utils::current_timestamp,
 };
 use serde::Deserialize;
-use sqlx::Connection;
 use tauri::{command, AppHandle, Manager, State};
 use tokio::fs;
-use tracing::instrument;
 
 use crate::base::AppState;
 
-#[instrument(skip(ah))]
+#[command]
+pub fn platform() -> String {
+    std::env::consts::OS.to_string()
+}
+
 #[command]
 pub fn open_devtools(ah: AppHandle) -> Result<()> {
     if let Some(v) = ah.get_webview_window("main") {
@@ -22,7 +27,6 @@ pub fn open_devtools(ah: AppHandle) -> Result<()> {
     Ok(())
 }
 
-#[instrument(skip(state))]
 #[command]
 pub async fn get_server_port(state: State<'_, AppState>) -> Result<u32> {
     let settings_lock = state.settings.read().await;
@@ -38,7 +42,6 @@ pub struct SearchParams {
     pub phrase_limit: usize,
 }
 
-#[instrument(skip(state))]
 #[command]
 pub async fn search(state: State<'_, AppState>, req: SearchParams) -> Result<Vec<String>> {
     let dict = if let Some(v) = state.get_dictionary(req.id).await {
@@ -60,7 +63,6 @@ pub async fn search(state: State<'_, AppState>, req: SearchParams) -> Result<Vec
     Ok(r)
 }
 
-#[instrument(skip(state))]
 #[command]
 pub async fn resize_cache(state: State<'_, AppState>, req: u64) -> Result<()> {
     let mut cache_lock = state.cache.write().await;
@@ -68,7 +70,6 @@ pub async fn resize_cache(state: State<'_, AppState>, req: u64) -> Result<()> {
     Ok(())
 }
 
-#[instrument(skip(state))]
 #[command]
 pub async fn get_settings(state: State<'_, AppState>) -> Result<Configuration> {
     let settings_lock = state.settings.read().await;
@@ -88,7 +89,6 @@ pub struct SettingsParams {
     pub dev_mode: Option<bool>,
 }
 
-#[instrument(skip(ah, state))]
 #[command]
 pub async fn set_settings(
     ah: AppHandle,
@@ -137,18 +137,16 @@ pub async fn set_settings(
     Ok(())
 }
 
-#[instrument(skip(state))]
 #[command]
 pub async fn reload_dicts(state: State<'_, AppState>) -> Result<()> {
     state.load_dictionaries().await?;
     Ok(())
 }
 
-#[instrument(skip(state))]
 #[command]
-pub async fn get_book_list(state: State<'_, AppState>) -> Result<Vec<BookModel>> {
-    let mut db = state.db.lock().await;
-    let mut list = BookModel::list(&mut db.conn, 1, 10000000, None).await?;
+pub async fn get_book_list(db: State<'_, Arc<Database>>) -> Result<Vec<BookModel>> {
+    let mut conn = db.pool.acquire().await?;
+    let mut list = BookModel::list(&mut conn, 1, 10000000, None).await?;
     let default_book = BookModel {
         id: 0,
         name: "Favorite".to_string(),
@@ -158,24 +156,22 @@ pub async fn get_book_list(state: State<'_, AppState>) -> Result<Vec<BookModel>>
     Ok(list)
 }
 
-#[instrument(skip(state))]
 #[command]
-pub async fn get_book_by_id(state: State<'_, AppState>, req: RowID) -> Result<Option<BookModel>> {
-    let mut db = state.db.lock().await;
-    let data = BookModel::get_by_id(&mut db.conn, req).await?;
+pub async fn get_book_by_id(db: State<'_, Arc<Database>>, req: RowID) -> Result<Option<BookModel>> {
+    let mut conn = db.pool.acquire().await?;
+    let data = BookModel::get_by_id(&mut conn, req).await?;
     Ok(data)
 }
 
-#[instrument(skip(state))]
 #[command]
-pub async fn add_book(state: State<'_, AppState>, req: String) -> Result<BookModel> {
-    let mut db = state.db.lock().await;
+pub async fn add_book(db: State<'_, Arc<Database>>, req: String) -> Result<BookModel> {
     let mut book = BookModel {
         id: 0,
         name: req,
         create_time: current_timestamp(),
     };
-    book.insert(&mut db.conn).await?;
+    let mut conn = db.pool.acquire().await?;
+    book.insert(&mut conn).await?;
     Ok(book)
 }
 
@@ -185,13 +181,11 @@ struct BookImport {
     pub words: Vec<String>,
 }
 
-#[instrument(skip(state))]
 #[command]
-pub async fn import_book(state: State<'_, AppState>, req: String) -> Result<()> {
+pub async fn import_book(db: State<'_, Arc<Database>>, req: String) -> Result<()> {
     let s = fs::read_to_string(req).await?;
     let books: Vec<BookImport> = serde_json::from_str(&s)?;
-    let mut db = state.db.lock().await;
-    let mut tx = db.conn.begin().await?;
+    let mut tx = db.pool.begin().await?;
     let now = current_timestamp();
     for item in books {
         let mut book = BookModel {
@@ -223,10 +217,8 @@ pub struct UpdateBookParams {
     pub name: Option<String>,
 }
 
-#[instrument(skip(state))]
 #[command]
-pub async fn update_book(state: State<'_, AppState>, mut req: UpdateBookParams) -> Result<()> {
-    let mut db = state.db.lock().await;
+pub async fn update_book(db: State<'_, Arc<Database>>, mut req: UpdateBookParams) -> Result<()> {
     let mut book = BookModel::default();
     book.id = req.id;
     let mut fields: Vec<&str> = vec![];
@@ -234,15 +226,14 @@ pub async fn update_book(state: State<'_, AppState>, mut req: UpdateBookParams) 
         book.name = v;
         fields.push("name");
     }
-    book.update(&mut db.conn, fields).await?;
+    let mut conn = db.pool.acquire().await?;
+    book.update(&mut conn, fields).await?;
     Ok(())
 }
 
-#[instrument(skip(state))]
 #[command]
-pub async fn delete_book(state: State<'_, AppState>, req: Vec<RowID>) -> Result<()> {
-    let mut db = state.db.lock().await;
-    let mut tx = db.conn.begin().await?;
+pub async fn delete_book(db: State<'_, Database>, req: Vec<RowID>) -> Result<()> {
+    let mut tx = db.pool.begin().await?;
     BookModel::delete(&mut tx, &req).await?;
     WordModel::delete_by_book_ids(&mut tx, &req).await?;
     tx.commit().await?;
@@ -257,17 +248,16 @@ pub struct WordListParams {
     pub order: Option<String>,
 }
 
-#[instrument(skip(state))]
 #[command]
 pub async fn get_word_list(
-    state: State<'_, AppState>,
+    db: State<'_, Arc<Database>>,
     req: WordListParams,
 ) -> Result<Pagination<WordModel>> {
     let book_id = req.book_id;
     let mut page = req.page;
     let size = req.size;
-    let mut db = state.db.lock().await;
-    let total = WordModel::count(&mut db.conn, book_id).await?;
+    let mut conn = db.pool.acquire().await?;
+    let total = WordModel::count(&mut conn, book_id).await?;
     let pages = ((total as f64) / (size as f64)).ceil() as u32;
     if page > pages {
         page = pages;
@@ -282,24 +272,16 @@ pub async fn get_word_list(
     if total == 0 {
         return Ok(pg);
     }
-    let list = WordModel::list(
-        &mut db.conn,
-        book_id,
-        page as usize,
-        size as usize,
-        req.order,
-    )
-    .await?;
+    let list = WordModel::list(&mut conn, book_id, page as usize, size as usize, req.order).await?;
     pg.list = list;
     Ok(pg)
 }
 
-#[instrument(skip(state))]
 #[command]
-pub async fn add_word(state: State<'_, AppState>, req: (RowID, String)) -> Result<()> {
+pub async fn add_word(db: State<'_, Arc<Database>>, req: (RowID, String)) -> Result<()> {
     let (book_id, name) = req;
-    let mut db = state.db.lock().await;
-    if WordModel::exist_by_name(&mut db.conn, book_id, &name).await? {
+    let mut conn = db.pool.acquire().await?;
+    if WordModel::exist_by_name(&mut conn, book_id, &name).await? {
         return Ok(());
     }
     let mut word = WordModel {
@@ -309,7 +291,7 @@ pub async fn add_word(state: State<'_, AppState>, req: (RowID, String)) -> Resul
         book_id,
         create_time: current_timestamp(),
     };
-    word.insert(&mut db.conn).await?;
+    word.insert(&mut conn).await?;
     Ok(())
 }
 
@@ -319,10 +301,8 @@ pub struct FamiliarParams {
     pub familiar: u32,
 }
 
-#[instrument(skip(state))]
 #[command]
-pub async fn set_word_familiar(state: State<'_, AppState>, req: FamiliarParams) -> Result<()> {
-    let mut db = state.db.lock().await;
+pub async fn set_word_familiar(db: State<'_, Arc<Database>>, req: FamiliarParams) -> Result<()> {
     let word = WordModel {
         id: req.id,
         name: "".to_string(),
@@ -330,14 +310,14 @@ pub async fn set_word_familiar(state: State<'_, AppState>, req: FamiliarParams) 
         book_id: 0,
         create_time: 0,
     };
-    word.update(&mut db.conn, vec!["familiar"]).await?;
+    let mut conn = db.pool.acquire().await?;
+    word.update(&mut conn, vec!["familiar"]).await?;
     Ok(())
 }
 
-#[instrument(skip(state))]
 #[command]
-pub async fn delete_words(state: State<'_, AppState>, req: Vec<RowID>) -> Result<()> {
-    let mut db = state.db.lock().await;
-    WordModel::delete(&mut db.conn, &req[..]).await?;
+pub async fn delete_words(db: State<'_, Arc<Database>>, req: Vec<RowID>) -> Result<()> {
+    let mut conn = db.pool.acquire().await?;
+    WordModel::delete(&mut conn, &req[..]).await?;
     Ok(())
 }

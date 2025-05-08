@@ -39,9 +39,12 @@ type Pagination<T> = {
     list: T[];
 };
 
+type OperationSystem = 'windows' | 'macos' | 'linux' | 'android' | 'ios';
+
 type RR<R, T> = { req: R; res: T };
 
 type IpcMessage = {
+    platform: RR<void, OperationSystem>;
     open_devtools: RR<void, void>;
     get_server_port: RR<void, number>;
     search: RR<

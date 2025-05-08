@@ -1,7 +1,7 @@
 use anyhow::Result;
+use log::error;
 use std::{fs, path::Path};
 use tauri::{AppHandle, Emitter};
-use tracing::{error, instrument};
 
 use serde::{Deserialize, Serialize};
 
@@ -92,7 +92,6 @@ pub struct Settings {
 }
 
 impl Settings {
-    #[instrument]
     pub fn init(config_dir: &str, data_dir: &str) -> Result<Self> {
         let config_path = Path::new(config_dir);
         if !config_path.exists() {
@@ -122,14 +121,12 @@ impl Settings {
         })
     }
 
-    #[instrument(skip_all)]
     pub fn notify_changed(&self, ah: AppHandle) {
         if let Err(e) = ah.emit("settings_changed", self.config.clone()) {
             error!("fail to notify settings_changed. {}", e);
         }
     }
 
-    #[instrument(skip_all)]
     pub fn save(&self) -> Result<()> {
         let s = serde_json::to_string(&self.config)?;
         fs::write(&self.file, s)?;

@@ -1,17 +1,14 @@
-use std::{path::Path, str::FromStr};
+use std::{fs, path::Path};
 
-use sqlx::{
-    sqlite::{SqliteConnectOptions, SqliteJournalMode},
-    ConnectOptions, Connection, Row, SqliteConnection,
-};
-use tracing::debug;
+use log::{debug, error};
+use sqlx::{sqlite::SqlitePoolOptions, Executor, Row, SqliteConnection, SqlitePool};
 
 use crate::model::{book::BOOK_TABLE, word::WORD_TABLE};
 
 const DB_FILE: &str = "data.db";
 
 pub struct Database {
-    pub conn: SqliteConnection,
+    pub pool: SqlitePool,
 }
 
 impl Database {
@@ -20,33 +17,27 @@ impl Database {
         P: AsRef<Path>,
     {
         let file = dir.as_ref().join(DB_FILE);
+        if !fs::exists(&file).unwrap() {
+            fs::File::create(&file).expect("fail to create db file");
+        }
         let filepath = file.to_str().unwrap();
         debug!("db file: {}", filepath);
-        let exists = file.exists();
-        let mut conn = match SqliteConnectOptions::from_str(&format!("sqlite://{}", filepath))
-            .unwrap()
-            .journal_mode(SqliteJournalMode::Wal)
-            .pragma("case_sensitive_like", "1")
-            .create_if_missing(true)
-            .connect()
-            .await
-        {
-            Ok(v) => v,
-            Err(e) => {
-                panic!("fail to connect to db file. {}", e);
-            }
-        };
-        if !exists {
-            set_user_version(&mut conn, 0).await;
+        let pool = SqlitePoolOptions::new()
+            .max_connections(5)
+            .connect_lazy(&format!("sqlite://{}", filepath))
+            .expect("fail to connect to database");
+        if let Err(e) = pool.execute("PRAGMA journal_mode=WAL").await {
+            error!("fail to execute sql. {:?}", e);
         }
-        let mut db = Self { conn };
+        pool.execute("PRAGMA case_sensitive_like=ON").await.unwrap();
+        let db = Self { pool };
         db.upgrade().await;
         db
     }
 
-    async fn upgrade(&mut self) {
-        let mut tx = self.conn.begin().await.unwrap();
-        let mut version = get_user_version(&mut *tx).await;
+    async fn upgrade(&self) {
+        let mut tx = self.pool.begin().await.unwrap();
+        let mut version = get_user_version(&mut tx).await;
         let init_version = version;
         let mut sqls: Vec<String> = vec![];
         if version == 0 {
@@ -112,8 +103,8 @@ impl Database {
 }
 
 async fn get_user_version(conn: &mut SqliteConnection) -> i32 {
-    let row = sqlx::query("PRAGMA user_version")
-        .fetch_one(conn)
+    let row = conn
+        .fetch_one("PRAGMA user_version")
         .await
         .expect("fail to get user_version");
     let version: i32 = row.get("user_version");
